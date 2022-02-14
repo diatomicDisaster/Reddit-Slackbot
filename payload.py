@@ -8,6 +8,38 @@ months = {
     11: 'November', 12: 'December'
     }
 
+def simple_payload(title):
+    blocks = [
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "radio_buttons",
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Approve",
+                                "emoji": True
+                            },
+                            "value": "value-0"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Remove",
+                                "emoji": True
+                            },
+                            "value": "value-1"
+                        }
+                    ],
+                    "action_id": "actionApproveRemove"
+                }
+            ]
+        }
+    ]
+    return blocks
+
 def submission_msg_payload(created_unix, title, author, thumbnail, submission_url):
     timestamp = datetime.datetime.fromtimestamp(created_unix, tz=datetime.timezone.utc)
     blocks = [

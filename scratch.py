@@ -27,13 +27,16 @@ for item in rspacex.mod.modqueue(limit=None):
         try:
             result = client.chat_postMessage(
                 channel="C02V3G9AZJ6",
-                blocks=json.dumps(payload.submission_msg_payload(
-                    item.created_utc,
-                    f"<{item.url}|{item.title}>",
-                    f"<https://reddit.com/u/{item.author.name}|u/{item.author.name}>",
-                    item.thumbnail,
-                    f"https://reddit.com{item.permalink}"
-                    )),
+                blocks=json.dumps(
+                    payload.submission_msg_payload(
+                        item.created_utc,
+                        f"<{item.url}|{item.title}>",
+                        f"<https://reddit.com/u/{item.author.name}|u/{item.author.name}>",
+                        item.thumbnail,
+                        f"https://reddit.com{item.permalink}"
+                    )
+                    #payload.simple_payload(item.title)
+                ),
                 unfurl_links=False,
                 unfurl_media=False
             )
