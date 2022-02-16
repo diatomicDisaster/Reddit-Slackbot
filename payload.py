@@ -1,5 +1,5 @@
 # Defines the JSON for new submission Slack message payload blocks
-import datetime
+from datetime import datetime, timezone
 
 months = {
     1: 'January', 2: 'February', 3: 'March',
@@ -8,7 +8,7 @@ months = {
     11: 'November', 12: 'December'
     }
 
-def simple_payload(title):
+def simple_payload():
     blocks = [
         {
             "type": "actions",
@@ -40,8 +40,17 @@ def simple_payload(title):
     ]
     return blocks
 
-def submission_msg_payload(created_unix, title, author, thumbnail, submission_url):
-    timestamp = datetime.datetime.fromtimestamp(created_unix, tz=datetime.timezone.utc)
+def build_submission_block(
+    created_unix, title, url, authorname, 
+    thumbnail_url, permalink
+    ):
+    
+    timestamp = datetime.fromtimestamp(created_unix, tz=timezone.utc)
+    timestring = f"Created {months[timestamp.month]} {timestamp.day}  at {timestamp:%H:%M:%S}"
+    titlestring = f"<{url}|{title}>"
+    authorstring = f"Author: <https://reddit.com/u/{authorname}|u/{authorname}>"
+    permalinkstring = f"https://reddit.com{permalink}"
+
     blocks = [
         # Preamble
         {
@@ -60,7 +69,7 @@ def submission_msg_payload(created_unix, title, author, thumbnail, submission_ur
             "elements": [
                 {
                     "type": "plain_text",
-                    "text": f"Created {months[timestamp.month]} {timestamp.day}  at {timestamp:%H:%M:%S}"
+                    "text": timestring
                 }
             ]
         },
@@ -69,12 +78,12 @@ def submission_msg_payload(created_unix, title, author, thumbnail, submission_ur
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": title
+                "text": titlestring
             }
         },
 		{
 			"type": "image",
-			"image_url": thumbnail,
+			"image_url": thumbnail_url,
 			"alt_text": "thumbnail"
 		},
         {
@@ -82,7 +91,7 @@ def submission_msg_payload(created_unix, title, author, thumbnail, submission_ur
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": f"Author: {author}"
+                    "text": authorstring
                 }
             ]
         },
@@ -98,7 +107,7 @@ def submission_msg_payload(created_unix, title, author, thumbnail, submission_ur
                         "emoji": True
                     },
                     "value": "seepost",
-                    "url": submission_url,
+                    "url": permalinkstring,
                     "action_id": "actionSeePost"
                 }
             ]
@@ -118,7 +127,7 @@ def submission_msg_payload(created_unix, title, author, thumbnail, submission_ur
                                 "text": "Approve",
                                 "emoji": True
                             },
-                            "value": "value-0"
+                            "value": "approve"
                         },
                         {
                             "text": {
@@ -126,7 +135,7 @@ def submission_msg_payload(created_unix, title, author, thumbnail, submission_ur
                                 "text": "Remove",
                                 "emoji": True
                             },
-                            "value": "value-1"
+                            "value": "remove"
                         }
                     ],
                     "action_id": "actionApproveRemove"

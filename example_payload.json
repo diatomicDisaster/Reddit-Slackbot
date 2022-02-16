@@ -1,1 +1,420 @@
-{"type": "block_actions", "user": {"id": "U03025P1JP3", "username": "wilfridsomogyi", "name": "wilfridsomogyi", "team_id": "T02V5R62EDS"}, "api_app_id": "A02V5RHKZK6", "token": "uCsl1lJLtEIzCCcvq03aYvJ9", "container": {"type": "message", "message_ts": "1644878206.392899", "channel_id": "C02V3G9AZJ6", "is_ephemeral": false}, "trigger_id": "3101085315557.2991856082468.a3508ab0457dd7004d9844287f8932f0", "team": {"id": "T02V5R62EDS", "domain": "rspacexslacktesting"}, "enterprise": null, "is_enterprise_install": false, "channel": {"id": "C02V3G9AZJ6", "name": "new-slack-bot"}, "message": {"bot_id": "B02V3HZUDJP", "type": "message", "text": "This content can't be displayed.", "user": "U02V3H0SMNW", "ts": "1644878206.392899", "team": "T02V5R62EDS", "blocks": [{"type": "section", "block_id": "6Dd", "text": {"type": "mrkdwn", "text": "<!channel> New modqueue item:", "verbatim": false}}, {"type": "divider", "block_id": "3NI"}, {"type": "context", "block_id": "w6A", "elements": [{"type": "plain_text", "text": "Created February 14  at 17:19:54", "emoji": true}]}, {"type": "section", "block_id": "ize", "text": {"type": "mrkdwn", "text": "<https://www.bbc.co.uk/news/av/world-middle-east-60350876|Couple married for 91 years still in love>", "verbatim": false}}, {"type": "image", "block_id": "MdsS", "image_url": "https://b.thumbs.redditmedia.com/Z0U2HqTjRAuBybR2QoIWiL5_txA9xRqQ57BuL5csumc.jpg", "alt_text": "thumbnail", "image_width": 140, "image_height": 78, "image_bytes": 5215, "fallback": "140x78px image", "rotation": 0, "is_animated": false}, {"type": "context", "block_id": "0C7S", "elements": [{"type": "mrkdwn", "text": "Author: <https://reddit.com/u/ElongatedMuskrat|u/ElongatedMuskrat>", "verbatim": false}]}, {"type": "actions", "block_id": "g84yB", "elements": [{"type": "button", "action_id": "actionSeePost", "text": {"type": "plain_text", "text": "See Post", "emoji": true}, "value": "seepost", "url": "https://reddit.com/r/GenericTesting/comments/ssfwh6/couple_married_for_91_years_still_in_love/"}]}, {"type": "divider", "block_id": "OTTX"}, {"type": "actions", "block_id": "1VYjt", "elements": [{"type": "radio_buttons", "action_id": "actionApproveRemove", "options": [{"text": {"type": "plain_text", "text": "Approve", "emoji": true}, "value": "value-0"}, {"text": {"type": "plain_text", "text": "Remove", "emoji": true}, "value": "value-1"}]}]}, {"type": "input", "block_id": "+ihw", "label": {"type": "plain_text", "text": "Select removal reason(s):", "emoji": true}, "optional": false, "dispatch_action": false, "element": {"type": "multi_static_select", "action_id": "actionRemovalReason", "placeholder": {"type": "plain_text", "text": "Select options", "emoji": true}, "options": [{"text": {"type": "plain_text", "text": "Q1 (Respectful): Hostility or personal attacks", "emoji": true}, "value": "Q1"}, {"text": {"type": "plain_text", "text": "Q1.3 (Respectful - Policy): Plagiarism, spam, misleading or illegality.", "emoji": true}, "value": "Q1.3"}, {"text": {"type": "plain_text", "text": "Q2.1 (Relevant - Focused): Not about SpaceX (generic)", "emoji": true}, "value": "Q2.1"}, {"text": {"type": "plain_text", "text": "Q2.1.1 (Relevant - Focused - Lounge): Tangential matters to Lounge", "emoji": true}, "value": "Q2.1.1"}, {"text": {"type": "plain_text", "text": "Q2.1.2 (Relevant - Focused - Starlink): Minor Starlink news to r/Starlink", "emoji": true}, "value": "Q2.1.2"}, {"text": {"type": "plain_text", "text": "Q2.1.3 (Relevant - Focused - NASA): NASA matters to r/NASA", "emoji": true}, "value": "Q2.1.3"}, {"text": {"type": "plain_text", "text": "Q2.2 (Relevant - Specific): Fanart, fandom, jobs, meta and speculation", "emoji": true}, "value": "Q2.2"}, {"text": {"type": "plain_text", "text": "Q3.1 (Novel - Salient): Duplicates or not enough new info", "emoji": true}, "value": "Q3.1"}, {"text": {"type": "plain_text", "text": "Q3.2 (Novel - Tweetstorm): Tweetstorms to original thread", "emoji": true}, "value": "Q3.2"}, {"text": {"type": "plain_text", "text": "Q3.3 (Novel - Question): Simple questions to wiki, FAQ, or Google", "emoji": true}, "value": "Q3.3"}, {"text": {"type": "plain_text", "text": "Q3.4 (Novel - Current): Out of date or anniversary posts ", "emoji": true}, "value": "Q3.4"}, {"text": {"type": "plain_text", "text": "Q4.1 (Substantive - Meme): Jokes, memes, and pop culture to Masterrace", "emoji": true}, "value": "Q4.1"}, {"text": {"type": "plain_text", "text": "Q4.2 (Substantive - Contribute): Low-quality posts to Lounge", "emoji": true}, "value": "Q4.2"}, {"text": {"type": "plain_text", "text": "Q4.3 (Substantive - Factual): Speculation, inflammatory or lacking evidence", "emoji": true}, "value": "Q4.3"}, {"text": {"type": "plain_text", "text": "Q4.4 (Substantive - Reddiquite): Bad Reddiqute", "emoji": true}, "value": "Q4.4"}, {"text": {"type": "plain_text", "text": "Q4.5 (Substantive - Personal): Non-newsworthy, opinion, photos or fluff", "emoji": true}, "value": "Q4.5"}, {"text": {"type": "plain_text", "text": "Q5.1 (Wellformed - Format): Formatting issues or bad crosspost", "emoji": true}, "value": "Q5.1"}, {"text": {"type": "plain_text", "text": "Q5.2 (Wellformed - Title): Clickbait, bad or non-matching titles", "emoji": true}, "value": "Q5.2"}, {"text": {"type": "plain_text", "text": "Q5.3 (Wellformed - Link): Broken, dirty, AMP or paywalled links", "emoji": true}, "value": "Q5.3"}, {"text": {"type": "plain_text", "text": "Q5.4 (Wellformed - Discuss): Straightforward/general questions", "emoji": true}, "value": "Q5.4"}, {"text": {"type": "plain_text", "text": "Q5.5.1 (Wellformed - Thread - Launch): Launch thread updates and questions", "emoji": true}, "value": "Q5.5.1"}, {"text": {"type": "plain_text", "text": "Q5.5.2 (Wellformed - Thread - Media): Media thread photos and articles", "emoji": true}, "value": "Q5.5.2"}, {"text": {"type": "plain_text", "text": "Q5.5.3 (Wellformed - Thread - Campaign): Campaign updates and questions", "emoji": true}, "value": "Q5.5.3"}, {"text": {"type": "plain_text", "text": "Q5.5.4 (Welformed - Thread - Starship): Starship dev updates", "emoji": true}, "value": "Q5.5.4"}]}}, {"type": "actions", "block_id": "9nls", "elements": [{"type": "button", "action_id": "actionConfirm", "text": {"type": "plain_text", "text": "Confirm", "emoji": true}, "value": "confirmed"}]}]}, "state": {"values": {"1VYjt": {"actionApproveRemove": {"type": "radio_buttons", "selected_option": {"text": {"type": "plain_text", "text": "Approve", "emoji": true}, "value": "value-0"}}}, "+ihw": {"actionRemovalReason": {"type": "multi_static_select", "selected_options": [{"text": {"type": "plain_text", "text": "Q1.3 (Respectful - Policy): Plagiarism, spam, misleading or illegality.", "emoji": true}, "value": "Q1.3"}]}}}}, "response_url": "https://hooks.slack.com/actions/T02V5R62EDS/3103987359666/vu8ElyXaexgt635QBd8iNb45", "actions": [{"action_id": "actionConfirm", "block_id": "9nls", "text": {"type": "plain_text", "text": "Confirm", "emoji": true}, "value": "confirmed", "type": "button", "action_ts": "1644878299.022221"}]}
+{
+    "type": "block_actions",
+    "user": {
+        "id": "U03025P1JP3",
+        "username": "wilfridsomogyi",
+        "name": "wilfridsomogyi",
+        "team_id": "T02V5R62EDS"
+    },
+    "api_app_id": "A02V5RHKZK6",
+    "token": "uCsl1lJLtEIzCCcvq03aYvJ9",
+    "container": {
+        "type": "message",
+        "message_ts": "1644878206.392899",
+        "channel_id": "C02V3G9AZJ6",
+        "is_ephemeral": false
+    },
+    "trigger_id": "3101085315557.2991856082468.a3508ab0457dd7004d9844287f8932f0",
+    "team": {
+        "id": "T02V5R62EDS",
+        "domain": "rspacexslacktesting"
+    },
+    "enterprise": null,
+    "is_enterprise_install": false,
+    "channel": {
+        "id": "C02V3G9AZJ6",
+        "name": "new-slack-bot"
+    },
+    "message": {
+        "bot_id": "B02V3HZUDJP",
+        "type": "message",
+        "text": "This content can't be displayed.",
+        "user": "U02V3H0SMNW",
+        "ts": "1644878206.392899",
+        "team": "T02V5R62EDS",
+        "blocks": [
+            {
+                "type": "section",
+                "block_id": "6Dd",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "<!channel> New modqueue item:",
+                    "verbatim": false
+                }
+            },
+            {
+                "type": "divider",
+                "block_id": "3NI"
+            },
+            {
+                "type": "context",
+                "block_id": "w6A",
+                "elements": [
+                    {
+                        "type": "plain_text",
+                        "text": "Created February 14  at 17:19:54",
+                        "emoji": true
+                    }
+                ]
+            },
+            {
+                "type": "section",
+                "block_id": "ize",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "<https://www.bbc.co.uk/news/av/world-middle-east-60350876|Couple married for 91 years still in love>",
+                    "verbatim": false
+                }
+            },
+            {
+                "type": "image",
+                "block_id": "MdsS",
+                "image_url": "https://b.thumbs.redditmedia.com/Z0U2HqTjRAuBybR2QoIWiL5_txA9xRqQ57BuL5csumc.jpg",
+                "alt_text": "thumbnail",
+                "image_width": 140,
+                "image_height": 78,
+                "image_bytes": 5215,
+                "fallback": "140x78px image",
+                "rotation": 0,
+                "is_animated": false
+            },
+            {
+                "type": "context",
+                "block_id": "0C7S",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "Author: <https://reddit.com/u/ElongatedMuskrat|u/ElongatedMuskrat>",
+                        "verbatim": false
+                    }
+                ]
+            },
+            {
+                "type": "actions",
+                "block_id": "g84yB",
+                "elements": [
+                    {
+                        "type": "button",
+                        "action_id": "actionSeePost",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "See Post",
+                            "emoji": true
+                        },
+                        "value": "seepost",
+                        "url": "https://reddit.com/r/GenericTesting/comments/ssfwh6/couple_married_for_91_years_still_in_love/"
+                    }
+                ]
+            },
+            {
+                "type": "divider",
+                "block_id": "OTTX"
+            },
+            {
+                "type": "actions",
+                "block_id": "1VYjt",
+                "elements": [
+                    {
+                        "type": "radio_buttons",
+                        "action_id": "actionApproveRemove",
+                        "options": [
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Approve",
+                                    "emoji": true
+                                },
+                                "value": "value-0"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Remove",
+                                    "emoji": true
+                                },
+                                "value": "value-1"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": "input",
+                "block_id": "+ihw",
+                "label": {
+                    "type": "plain_text",
+                    "text": "Select removal reason(s):",
+                    "emoji": true
+                },
+                "optional": false,
+                "dispatch_action": false,
+                "element": {
+                    "type": "multi_static_select",
+                    "action_id": "actionRemovalReason",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Select options",
+                        "emoji": true
+                    },
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q1 (Respectful): Hostility or personal attacks",
+                                "emoji": true
+                            },
+                            "value": "Q1"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q1.3 (Respectful - Policy): Plagiarism, spam, misleading or illegality.",
+                                "emoji": true
+                            },
+                            "value": "Q1.3"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q2.1 (Relevant - Focused): Not about SpaceX (generic)",
+                                "emoji": true
+                            },
+                            "value": "Q2.1"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q2.1.1 (Relevant - Focused - Lounge): Tangential matters to Lounge",
+                                "emoji": true
+                            },
+                            "value": "Q2.1.1"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q2.1.2 (Relevant - Focused - Starlink): Minor Starlink news to r/Starlink",
+                                "emoji": true
+                            },
+                            "value": "Q2.1.2"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q2.1.3 (Relevant - Focused - NASA): NASA matters to r/NASA",
+                                "emoji": true
+                            },
+                            "value": "Q2.1.3"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q2.2 (Relevant - Specific): Fanart, fandom, jobs, meta and speculation",
+                                "emoji": true
+                            },
+                            "value": "Q2.2"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q3.1 (Novel - Salient): Duplicates or not enough new info",
+                                "emoji": true
+                            },
+                            "value": "Q3.1"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q3.2 (Novel - Tweetstorm): Tweetstorms to original thread",
+                                "emoji": true
+                            },
+                            "value": "Q3.2"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q3.3 (Novel - Question): Simple questions to wiki, FAQ, or Google",
+                                "emoji": true
+                            },
+                            "value": "Q3.3"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q3.4 (Novel - Current): Out of date or anniversary posts ",
+                                "emoji": true
+                            },
+                            "value": "Q3.4"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q4.1 (Substantive - Meme): Jokes, memes, and pop culture to Masterrace",
+                                "emoji": true
+                            },
+                            "value": "Q4.1"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q4.2 (Substantive - Contribute): Low-quality posts to Lounge",
+                                "emoji": true
+                            },
+                            "value": "Q4.2"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q4.3 (Substantive - Factual): Speculation, inflammatory or lacking evidence",
+                                "emoji": true
+                            },
+                            "value": "Q4.3"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q4.4 (Substantive - Reddiquite): Bad Reddiqute",
+                                "emoji": true
+                            },
+                            "value": "Q4.4"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q4.5 (Substantive - Personal): Non-newsworthy, opinion, photos or fluff",
+                                "emoji": true
+                            },
+                            "value": "Q4.5"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q5.1 (Wellformed - Format): Formatting issues or bad crosspost",
+                                "emoji": true
+                            },
+                            "value": "Q5.1"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q5.2 (Wellformed - Title): Clickbait, bad or non-matching titles",
+                                "emoji": true
+                            },
+                            "value": "Q5.2"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q5.3 (Wellformed - Link): Broken, dirty, AMP or paywalled links",
+                                "emoji": true
+                            },
+                            "value": "Q5.3"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q5.4 (Wellformed - Discuss): Straightforward/general questions",
+                                "emoji": true
+                            },
+                            "value": "Q5.4"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q5.5.1 (Wellformed - Thread - Launch): Launch thread updates and questions",
+                                "emoji": true
+                            },
+                            "value": "Q5.5.1"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q5.5.2 (Wellformed - Thread - Media): Media thread photos and articles",
+                                "emoji": true
+                            },
+                            "value": "Q5.5.2"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q5.5.3 (Wellformed - Thread - Campaign): Campaign updates and questions",
+                                "emoji": true
+                            },
+                            "value": "Q5.5.3"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q5.5.4 (Welformed - Thread - Starship): Starship dev updates",
+                                "emoji": true
+                            },
+                            "value": "Q5.5.4"
+                        }
+                    ]
+                }
+            },
+            {
+                "type": "actions",
+                "block_id": "9nls",
+                "elements": [
+                    {
+                        "type": "button",
+                        "action_id": "actionConfirm",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Confirm",
+                            "emoji": true
+                        },
+                        "value": "confirmed"
+                    }
+                ]
+            }
+        ]
+    },
+    "state": {
+        "values": {
+            "1VYjt": {
+                "actionApproveRemove": {
+                    "type": "radio_buttons",
+                    "selected_option": {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Approve",
+                            "emoji": true
+                        },
+                        "value": "value-0"
+                    }
+                }
+            },
+            "+ihw": {
+                "actionRemovalReason": {
+                    "type": "multi_static_select",
+                    "selected_options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Q1.3 (Respectful - Policy): Plagiarism, spam, misleading or illegality.",
+                                "emoji": true
+                            },
+                            "value": "Q1.3"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "response_url": "https://hooks.slack.com/actions/T02V5R62EDS/3103987359666/vu8ElyXaexgt635QBd8iNb45",
+    "actions": [
+        {
+            "action_id": "actionConfirm",
+            "block_id": "9nls",
+            "text": {
+                "type": "plain_text",
+                "text": "Confirm",
+                "emoji": true
+            },
+            "value": "confirmed",
+            "type": "button",
+            "action_ts": "1644878299.022221"
+        }
+    ]
+}
