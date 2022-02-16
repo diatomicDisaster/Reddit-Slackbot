@@ -9,6 +9,7 @@ slack_token = os.environ.get('SLACK_TOKEN')
 client = WebClient(token=slack_token)
 
 def newitem_message(blocks, channel):
+    """Send message for new mod item to specified Slack channel"""
     try:
         result = client.chat_postMessage(
             blocks=blocks, channel=channel, 

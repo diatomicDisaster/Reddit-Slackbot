@@ -21,7 +21,6 @@ class ModItem:
     """Stores information about the state of an item in the modqueue."""
     def __init__(self, prawitem):
         self.prawitem = prawitem
-        # self._msg_payload = None
     
     def __getattr__(self, attr):
         return getattr(self.prawitem, attr)
@@ -41,17 +40,6 @@ class ModSubmission(ModItem):
             raise MsgSendError(
                 f"{error.obj!r} object is missing field {error.name!r}."
             ) from error 
-
-    # @msg_payload.setter
-    # def msg_payload(self):
-    #     self._msg_payload = build_submission_block(
-    #         self.created_utc, self.title, self.url, self.author.name, 
-    #         self.thumbnail, self.permalink
-    #     )
-    
-    # @msg_payload.deleter
-    # def msg_payload(self):
-    #     del self._msg_payload
 
 def item_is_known(prawitem):
     """Checks if item ID is in list of known IDs"""
@@ -77,6 +65,9 @@ def check_queue(sub):
     """Check subreddit modqueue for unmoderated items."""
     for item in sub.mod.modqueue(limit=None):
         if isinstance(item, praw.models.Submission):
-            process_submission(item)
+            try:
+                process_submission(item)
+            except:
+                continue
         else:
             print("Ignoring non-submission item.")
