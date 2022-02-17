@@ -1,56 +1,93 @@
-# Defines the JSON for new submission Slack message payload blocks
 from datetime import datetime, timezone
+import json
+import os
 
-months = {
-    1: 'January', 2: 'February', 3: 'March',
-    4: 'April', 5: 'May', 6: 'June', 7: 'July',
-    8: 'August', 9: 'September', 10: 'October',
-    11: 'November', 12: 'December'
-    }
+from constants import POST_DIR
 
-def simple_payload():
-    blocks = [
-        {
-            "type": "actions",
-            "elements": [
-                {
-                    "type": "radio_buttons",
-                    "options": [
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Approve",
-                                "emoji": True
-                            },
-                            "value": "value-0"
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Remove",
-                                "emoji": True
-                            },
-                            "value": "value-1"
-                        }
-                    ],
-                    "action_id": "actionApproveRemove"
-                }
-            ]
-        }
-    ]
-    return blocks
+class ModResponse:
+    """Class for storing moderator responses to Slack mod item messages"""
+    # TODO Find a cleaner, more general way of updating mod response actions
+    def __init__(self, parentmsg_ts):
+        self.parentmsg_ts = parentmsg_ts
+        self.actions = {
+            'actionApproveRemove' : None,
+            'actionRemovalReason' : [],
+            'actionConfirm' : False
+            }
 
-def build_submission_block(
-    created_unix, title, url, authorname, 
-    thumbnail_url, permalink
-    ):
+    def update(self, state):
+        for block in state.values.values():
+            for actionid, action in block.items():
+                if actionid == "actionRemovalReason":
+                    self.actions[actionid].append(action.value)
+                else:
+                    self.actions[actionid] = action.value
+
+
+
+def find_latest(message_ts):
+    """Retrieves the latest POST request timestamp for a given message."""
+    latest_ts = message_ts
+    for postfile in os.listdir(os.fsencode(POST_DIR)):
+        filename = os.fsdecode(postfile)
+        if filename.endswith(".json"):
+            request_ts = filename.strip(".json")
+            if request_ts < latest: 
+                continue
+            else:
+                with open(os.path.join(POST_DIR, filename), 'r') as file:
+                    payload = json.load(file)
+                if payload['container']['message_ts'] == message_ts:
+                    if request_ts > latest : latest = request_ts
+                else:
+                    continue
+        else:
+            continue
+    return latest_ts
+
+def find_payloads(message_ts):
+    """Retrieves all POST request timestamps for a given message."""
+    payload_ts = []
+    for postfile in os.listdir(os.fsencode(POST_DIR)):
+        filename = os.fsdecode(postfile)
+        if filename.endswith(".json"):
+            request_ts = filename.strip(".json")
+            with open(os.path.join(POST_DIR, filename), 'r') as file:
+                payload = json.load(file)
+            if payload['container']['message_ts'] == message_ts:
+                payload_ts.append(request_ts)
+            else:
+                continue
+        else:
+            continue
+    return payload_ts.sort()
+
+def build_submission_blocks(
+    created_unix, title, url, authorname, thumbnail_url, permalink):
+    """Build Slack API blocks for new submission message."""
+    # TODO Dynamically generate blocks based on user-defined config file with
+    #  custom subreddit removal messages.
+    # TODO Add block element for flairing posts functionality.
     
+    # Dictionary of month names
+    months = {
+        1: 'January', 2: 'February', 3: 'March',
+        4: 'April', 5: 'May', 6: 'June', 7: 'July',
+        8: 'August', 9: 'September', 10: 'October',
+        11: 'November', 12: 'December'
+        }
+
+    # Lambda function for converting cardinal to ordinal
+    ordinal = lambda n : "%d%s" % (n,"tsnrhtdd"[(n//10%10!=1)*(n%10<4)*n%10::4])
+
+    # Convert PRAW object attributes to message strings
     timestamp = datetime.fromtimestamp(created_unix, tz=timezone.utc)
-    timestring = f"Created {months[timestamp.month]} {timestamp.day}  at {timestamp:%H:%M:%S}"
+    timestring = f"Created {months[timestamp.month]} {ordinal(timestamp.day)}  at {timestamp:%H:%M}"
     titlestring = f"<{url}|{title}>"
     authorstring = f"Author: <https://reddit.com/u/{authorname}|u/{authorname}>"
     permalinkstring = f"https://reddit.com{permalink}"
-
+    
+    # Slack API blocks
     blocks = [
         # Preamble
         {
@@ -73,7 +110,7 @@ def build_submission_block(
                 }
             ]
         },
-        # Sumbission info
+        # Submission info
         {
             "type": "section",
             "text": {

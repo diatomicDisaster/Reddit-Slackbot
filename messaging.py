@@ -1,5 +1,4 @@
 import os
-import json
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
@@ -10,12 +9,14 @@ client = WebClient(token=slack_token)
 
 def newitem_message(blocks, channel):
     """Send message for new mod item to specified Slack channel"""
+    # TODO Handle missing thumbnail URL gracefully, as many third party sources
+    #  do not appear to permalink thumbnails.
     try:
         result = client.chat_postMessage(
-            blocks=blocks, channel=channel, 
-            unfurl_links=False, unfurl_media=False,
-            text="New modqueue item"
+            blocks=blocks, channel=channel, text="New modqueue item", 
+            unfurl_links=False, unfurl_media=False
         )
         result.validate()
+        return result.ts
     except SlackApiError as error:
         raise MsgSendError("Failed to send item to Slack.") from error
