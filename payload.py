@@ -65,9 +65,9 @@ def find_payloads(message_ts):
 def build_submission_blocks(
     created_unix, title, url, authorname, thumbnail_url, permalink):
     """Build Slack API blocks for new submission message."""
-    # TODO Dynamically generate blocks based on user-defined config file with
+    ### Dynamically generate blocks based on user-defined config file with
     #  custom subreddit removal messages.
-    # TODO Add block element for flairing posts functionality.
+    ### Add block element for flairing posts functionality.
     
     # Dictionary of month names
     months = {
