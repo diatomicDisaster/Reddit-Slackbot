@@ -9,7 +9,7 @@ client = WebClient(token=slack_token)
 
 def newitem_message(blocks, channel):
     """Send message for new mod item to specified Slack channel"""
-    ### Handle missing thumbnail URL gracefully, as many third party sources
+    # TODO Handle missing thumbnail URL gracefully, as many third party sources
     #  do not appear to permalink thumbnails.
     try:
         result = client.chat_postMessage(
