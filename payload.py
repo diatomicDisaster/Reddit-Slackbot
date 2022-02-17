@@ -6,7 +6,7 @@ from config import POST_DIR
 
 class ModResponse:
     """Class for storing moderator responses to Slack mod item messages"""
-    # TODO Find a cleaner, more general way of updating mod response actions
+    ## Find a cleaner, more general way of updating mod response actions
     def __init__(self, parentmsg_ts):
         self.parentmsg_ts = parentmsg_ts
         self.actions = {
