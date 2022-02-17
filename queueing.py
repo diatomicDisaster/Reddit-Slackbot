@@ -1,10 +1,9 @@
 import os
 import praw
 import json
-from constants import KNOWN_ITEM_IDS
+from config import KNOWN_ITEM_IDS, SUBMISSION_CHANNEL
 from payload import build_submission_blocks
 from messaging import newitem_message
-from config import SUBMISSION_CHANNEL
 from exceptions import MsgSendError
 
 

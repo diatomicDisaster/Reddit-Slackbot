@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import json
 import os
 
-from constants import POST_DIR
+from config import POST_DIR
 
 class ModResponse:
     """Class for storing moderator responses to Slack mod item messages"""
