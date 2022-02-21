@@ -1,92 +1,122 @@
-import os
-import praw
+# Native imports
 import json
-from config import KNOWN_ITEM_IDS, SUBMISSION_CHANNEL
-from payload import build_submission_blocks
-from messaging import newitem_message
-from exceptions import MsgSendError
+import os
+from builtins import FileNotFoundError
 
+# 3rd party imports
+import praw
+import jsonpickle
 
-class ModItem:
-    """Stores information about the state of an item in the modqueue."""
-    def __init__(self, prawitem):
-        self.prawitem = prawitem
-    
-    def __getattr__(self, attr):
-        return getattr(self.prawitem, attr)
-
-    def send_msg(self):
-        ts = newitem_message(self.msg_payload, self.slackchannel)
-        self.message_ts = ts
-
-class ModSubmission(ModItem):
-    """Stores information about the state of an item in the modqueue."""
-    
-    slackchannel = SUBMISSION_CHANNEL
-    
-    def __init__(self, prawitem):
-        self.prawitem = prawitem
-        self.message_ts = None
-
-    @property
-    def msg_payload(self):
-        try:
-            return build_submission_blocks(
-                self.created_utc, self.title, 
-                self.url, self.author.name, 
-                self.thumbnail, self.permalink
-            )
-        except AttributeError as error:
-            raise MsgSendError(
-                f"{error.obj!r} object is missing field {error.name!r}."
-            ) from error
+# Local imports
+from modfromslack.config import KNOWN_ITEMS, SUBMISSION_CHANNEL, POST_DIR
+from modfromslack.types import ModSubmission
 
 def item_is_known(prawitem):
-    """Checks if item ID is in list of known IDs"""
+    """Checks if item ID is in list of known items"""
+    # TODO Detect when message has been sent to Slack queue but not added to
+    # the list of known modqueue items
     try:
-        with open(KNOWN_ITEM_IDS, 'r+') as idfile:
-            knownitems = json.load(idfile)
-    except json.JSONDecodeError:
-        knownitems = []
-    if prawitem.id in knownitems:
+        with open(KNOWN_ITEMS, 'r') as itemfile:
+            jsonstr = f'{itemfile.read()}'
+            knownitems = jsonpickle.decode(jsonstr)
+    except (json.JSONDecodeError, FileNotFoundError):
+        knownitems = {}
+    if prawitem.id in knownitems.keys():
         return True, knownitems
     else:
         return False, knownitems
 
-def process_moditem(prawitem):
-    """Process item in the modqueue."""
-    isknown, knownitems = item_is_known(prawitem)
-    if isknown:
-        return None
-    else:
-        if isinstance(prawitem, praw.models.Submission):
-            moditem = ModSubmission(prawitem)
+def find_latest(message_ts):
+    """Retrieves the latest POST request timestamp for a given message."""
+    latest_ts = message_ts
+    for postfile in os.listdir(os.fsencode(POST_DIR)):
+        if (filename := os.fsdecode(postfile)).endswith('.json'):
+            request_ts = filename.strip('.json')
+            if request_ts < latest_ts: 
+                continue
+            else:
+                with open(os.path.join(POST_DIR, filename), 'r') as file:
+                    request = json.load(file)
+                if request['container']['message_ts'] == message_ts:
+                    if request_ts > latest_ts : latest_ts = request_ts
+                else:
+                    continue
         else:
-            print("Ignoring non-submission item.")
-            return
-        moditem.send_msg()
-        knownitems.append(prawitem.id)
-        with open(KNOWN_ITEM_IDS, 'w+') as idfile:
-            json.dump(knownitems, idfile)
-        return
+            continue
+    return latest_ts
 
-def check_queue(sub):
+def find_requests(moditem, postdir):
+    """Retrieves all POST requests for a given mod item, returns sorted list."""
+    recieved_timestamps = [] # POST request recieved timestamp
+    requests = [] # POST request request
+    for postfile in os.listdir(os.fsencode(postdir)):
+        if (filename := os.fsdecode(postfile)).endswith('.json'):
+            request_ts = filename.strip('.json')
+            with open(os.path.join(postdir, filename), 'r') as file:
+                request = json.load(file)
+            if request['container']['message_ts'] == moditem.message_ts:
+                recieved_timestamps.append(request_ts)
+                requests.append(request)
+            else:
+                continue
+        else:
+            continue
+    if len(recieved_timestamps) == 0:
+        return ([], [])
+    else:
+        return zip(*sorted(zip(recieved_timestamps, requests)))
+
+def process_responses(moditem, postdir):
+    """Check for responses to mod item message."""
+    recieved_ts, requests = find_requests(moditem, postdir)
+    for request in requests:
+        moderator = request['user']['id']
+        if moderator in moditem.responses:
+            moditem.responses[moderator].update(request['actions'])
+        else:
+            moditem.responses[moderator] = moditem.ResponseType(moditem.message_ts)
+            moditem.responses[moderator].update(request['actions'])
+
+def check_reddit_queue(client, sub, knownitems=None):
     """Check subreddit modqueue for unmoderated items."""
     for item in sub.mod.modqueue(limit=None):
-        try:
-            process_moditem(item)
-        except:
+        # Check if item is comment or submission
+        if isinstance(item, praw.models.Submission):
+            ModItem = ModSubmission
+        else:
+            print("Ignoring non-submission item.")
             continue
+        # Check if item is known
+        if knownitems is None:
+            isknown, knownitems = item_is_known(item)
+        else:
+            isknown = True if item.id in knownitems else False
+        # Check for responses or send initial message
+        if isknown:
+            continue
+        else:
+            moditem = ModItem(item)
+            moditem.send_msg(client, SUBMISSION_CHANNEL)
+            # Add to known items
+            knownitems[item.id] = moditem
+            with open(KNOWN_ITEMS, 'w+') as itemfile:
+                jsonstr = jsonpickle.encode(knownitems)
+                print(jsonstr, file=itemfile)
+                #json.dump(knownitems, itemfile)
+    return knownitems
 
-# Development code
-reddit = praw.Reddit(
-    client_id=os.environ.get('PRAW_CLIENT_ID'),
-    client_secret=os.environ.get('PRAW_CLIENT_SECRET'),
-    password=os.environ.get('PRAW_PASSWORD'),
-    username=os.environ.get('PRAW_USER'),
-    user_agent=os.environ.get('PRAW_AGENT')
-)
-
-subreddit = reddit.subreddit(os.environ.get('PRAW_SUBREDDIT'))
-
-check_queue(subreddit)
+def check_slack_queue(client, reddit, knownitems):
+    """Check Slack items for moderation actions"""
+    # TODO Add file clean-up after post approve/remove
+    incomplete = []
+    for moditem in knownitems.values():
+        process_responses(moditem, POST_DIR)
+        if moditem.approve_or_remove == "approve":
+            reddit.submission(moditem.prawitem).mod.approve()
+        elif moditem.approve_or_remove == "remove":
+            reddit.submission(moditem.prawitem).mod.remove()
+        else:
+            incomplete.append(moditem)
+            continue
+        _ = client.chat_delete(channel=channel, ts=moditem.message_ts)
+    return incomplete

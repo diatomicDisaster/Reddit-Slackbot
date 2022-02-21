@@ -12,12 +12,19 @@ def response():
         """Dump payload to JSON file"""
         from json import dump, loads
         payload = loads(kwargs.get('payload', {}))
-        with open(os.path.join('/path/to/POST_DIR/', f'{time()}.json'), 'w+') as outfile:
+        ts = kwargs.get('ts', {}) # Filename is timestamp of initial POST request processing
+        with open(os.path.join('POST', f'{ts}.json'), 'w+') as outfile:
             dump(payload, outfile)
         return
     if request.method == 'POST':
-        # Process post request as thread to return 200 status code within 3 seconds
-        thread = Thread(target=dump_payload, kwargs={'payload': request.values['payload']})
+        ts = time() # Get timestamp before starting thread to preserve order
+        thread = Thread( # Must return 200 in < 3 secs so process as thread
+            target=dump_payload, 
+            kwargs={
+                'payload': request.values['payload'], 
+                'ts': ts
+            }
+        )
         thread.start()
         return Response(status=200)
     else:
