@@ -74,15 +74,8 @@ def process_responses(moditem):
         if moderator in moditem.responses:
             moditem.responses[moderator].update(request['actions'])
         else:
-            moditem.responses[moderator] = moditem.ResponseType(moditem.message_ts)
+            moditem.initialize_response(moderator)
             moditem.responses[moderator].update(request['actions'])
-
-def cleanup_post_requests(knownitems):
-    """Robust method to remove POST request files for completed items."""
-    keep = [fname for item in knownitems for fname in find_requests(item)[0]]
-    for postfile in os.listdir(os.fsencode(POST_DIR)):
-        if (filename := os.fsdecode(postfile)).strip('.json') not in keep:
-            os.remove(filename)
 
 def check_reddit_queue(client, sub, knownitems=None):
     """Check subreddit modqueue for unmoderated items."""
@@ -111,20 +104,35 @@ def check_reddit_queue(client, sub, knownitems=None):
                 print(jsonstr, file=itemfile)
     return knownitems
 
+def cleanup_json_files(incomplete_items):
+    """Remove POST request files for completed items and clean known item JSON"""
+    with open(KNOWN_ITEMS, 'w+') as itemfile:
+        jsonstr = jsonpickle.encode(incomplete_items)
+        print(jsonstr, file=itemfile)
+    keepjson_ts = [request[1] for item in incomplete_items.values() for request in find_requests(item)]
+    for postfile in os.listdir(os.fsencode(POST_DIR)):
+        if (filename := os.fsdecode(postfile)).strip('.json') not in keepjson_ts:
+            os.remove(os.path.join(POST_DIR, filename))
+
 def check_slack_queue(client, reddit, knownitems):
     """Check Slack items for moderation actions"""
-    # TODO Add file clean-up after post approve/remove
-    incomplete = []
+    incomplete = {}
+    complete = {}
+    if knownitems is None:
+        knownitems = {}
     for moditem in knownitems.values():
-        process_responses(moditem, POST_DIR)
+        process_responses(moditem)
         if moditem.approve_or_remove == "approve":
             reddit.submission(moditem.prawitem).mod.approve()
         elif moditem.approve_or_remove == "remove":
             reddit.submission(moditem.prawitem).mod.remove()
+            # TODO Add method for applying removal reasons and sending modmail
         else:
-            incomplete.append(moditem)
+            incomplete[moditem.prawitem] = moditem
             continue
+        complete[moditem.prawitem] = moditem
         moditem.delete_msg(client)
-    cleanup_post_requests(incomplete)
-    return incomplete
+    cleanup_json_files(incomplete_items=incomplete)
+    knownitems = incomplete
+    return knownitems
     

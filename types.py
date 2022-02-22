@@ -67,7 +67,6 @@ class SubmissionResponse:
             'actionRemovalReason' : RemovalReason(),
             'actionConfirm' : Confirm()
             }
-        self.confirmed = False
 
     def update(self, payload_actions):
         """Update response with actions from Slack payload."""
@@ -105,7 +104,7 @@ class ModSubmission(ModItem):
         self.permalink = prawitem.permalink
         super().__init__(prawitem)
 
-    def send_msg(self, client, channel):
+    def send_msg(self, client):
         """Send message for new mod item to specified Slack channel"""
         # TODO Handle missing thumbnail URL gracefully, as many third party 
         # sources do not appear to permalink thumbnails.
@@ -122,7 +121,17 @@ class ModSubmission(ModItem):
     
     def delete_msg(self, client):
         """Delete mod item message from channel"""
-        result = client.chat_delete(channel=self.channel, ts=self.message_ts)
+        try:
+            result = client.chat_delete(channel=self.channel, ts=self.message_ts)
+        except SlackApiError as error:
+            if error.response["error"] == 'message_not_found':
+                pass
+            else:
+                raise error
+
+    def initialize_response(self, moderator):
+        """Initialize a new moderator response object"""
+        self.responses[moderator] = self._ResponseType(self.message_ts)
 
     @property
     def msg_payload(self):
@@ -144,7 +153,8 @@ class ModSubmission(ModItem):
     def approve_or_remove(self):
         votesum = 0
         for response in self.responses.values():
-            votesum += float(response.actions['actionApproveRemove'].value)
+            if response.actions['actionConfirm'].value: 
+                votesum += float(response.actions['actionApproveRemove'].value)
         if votesum >= self._approval_threshold:
             return "approve"
         elif votesum <= self._removal_threshold:
