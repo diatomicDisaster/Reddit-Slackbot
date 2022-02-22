@@ -2,12 +2,14 @@
 import abc
 from typing import Type
 
-import praw
+from slack_sdk.errors import SlackApiError
 
-from modfromslack.messaging import newitem_message
 from modfromslack.payload import build_submission_blocks
 from modfromslack.exceptions import MsgSendError, ActionSequenceError
-from modfromslack.config import APPROVAL_THRESHOLD, REMOVAL_THRESHOLD
+from modfromslack.config import APPROVAL_THRESHOLD, REMOVAL_THRESHOLD, SUBMISSION_CHANNEL
+
+# TODO Add functionality for flairing posts
+# TODO Add functionality for awarding posts
 
 class AbstractModAction(abc.ABC):
     """Abstract class for moderation actions."""
@@ -91,7 +93,8 @@ class ModSubmission(ModItem):
 
     _approval_threshold : float = APPROVAL_THRESHOLD
     _removal_threshold : float = REMOVAL_THRESHOLD
-    ResponseType : Type = SubmissionResponse
+    channel : str = SUBMISSION_CHANNEL
+    _ResponseType : Type = SubmissionResponse
 
     def __init__(self, prawitem):
         self.created_utc = prawitem.created_utc 
@@ -103,9 +106,24 @@ class ModSubmission(ModItem):
         super().__init__(prawitem)
 
     def send_msg(self, client, channel):
-        result = newitem_message(self.msg_payload, client, channel)
-        self.message_ts = result.data['ts']
+        """Send message for new mod item to specified Slack channel"""
+        # TODO Handle missing thumbnail URL gracefully, as many third party 
+        # sources do not appear to permalink thumbnails.
+        try:
+            result = client.chat_postMessage(
+                blocks=self.msg_payload, channel=self.channel, 
+                text="New modqueue item", unfurl_links=False, unfurl_media=False
+            )
+            result.validate()
+            self.message_ts = result.data['ts']
+            return result
+        except SlackApiError as error:
+            raise MsgSendError("Failed to send item to Slack.") from error
     
+    def delete_msg(self, client):
+        """Delete mod item message from channel"""
+        result = client.chat_delete(channel=self.channel, ts=self.message_ts)
+
     @property
     def msg_payload(self):
         try:
@@ -120,7 +138,7 @@ class ModSubmission(ModItem):
         except AttributeError as error:
             raise MsgSendError(
                 f"{error.obj!r} object is missing field {error.name!r}."
-            ) from error
+            )
 
     @property
     def approve_or_remove(self):
