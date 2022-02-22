@@ -62,20 +62,22 @@ def find_requests(moditem):
         else:
             continue
     if len(recieved_timestamps) == 0:
-        return (), ()
+        return None
     else:
+        # TODO Consider switching to two lists to enable iterating on null results
         return zip(*sorted(zip(requests, recieved_timestamps), key=lambda z: z[1]))
 
 def process_responses(moditem):
     """Check for responses to mod item message."""
-    requests, recieved_ts = find_requests(moditem)
-    for request in requests:
-        moderator = request['user']['id']
-        if moderator in moditem.responses:
-            moditem.responses[moderator].update(request['actions'])
-        else:
-            moditem.initialize_response(moderator)
-            moditem.responses[moderator].update(request['actions'])
+    requests = find_requests(moditem)
+    if requests:
+        for request, timestamp in requests:
+            moderator = request['user']['id']
+            if moderator in moditem.responses:
+                moditem.responses[moderator].update(request['actions'])
+            else:
+                moditem.initialize_response(moderator)
+                moditem.responses[moderator].update(request['actions'])
 
 def check_reddit_queue(client, sub, knownitems=None):
     """Check subreddit modqueue for unmoderated items."""
@@ -109,7 +111,12 @@ def cleanup_json_files(incomplete_items):
     with open(KNOWN_ITEMS, 'w+') as itemfile:
         jsonstr = jsonpickle.encode(incomplete_items)
         print(jsonstr, file=itemfile)
-    keepjson_ts = [request[1] for item in incomplete_items.values() for request in find_requests(item)]
+    keepjson_ts = []
+    for item in incomplete_items.values():
+        requests = find_requests(item)
+        if requests:
+            for request, timestamp in requests:
+                keepjson_ts.append(request)
     for postfile in os.listdir(os.fsencode(POST_DIR)):
         if (filename := os.fsdecode(postfile)).strip('.json') not in keepjson_ts:
             os.remove(os.path.join(POST_DIR, filename))

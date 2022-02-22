@@ -46,7 +46,7 @@ class RemovalReason(ModAction):
         self.value = []
         super().__init__()
     
-    def update(self, action):
+    def _update(self, action):
         self.value = [option['value'] for option in action['selected_options']]
 
 class Confirm(ModAction):
@@ -54,9 +54,14 @@ class Confirm(ModAction):
     def __init__(self):
         self.value = False
     
-    def update(self, action):
+    def _update(self, action):
         """Confirm previous inputs"""
         self.value = True
+
+class EmptyAction(ModAction):
+    """Mod action that requires nothing."""
+    def _update(self, action):
+        pass
 
 class SubmissionResponse:
     """Class for storing moderator responses to Slack mod item messages."""
@@ -65,7 +70,8 @@ class SubmissionResponse:
         self.actions = {
             'actionApproveRemove' : ApproveRemove(),
             'actionRemovalReason' : RemovalReason(),
-            'actionConfirm' : Confirm()
+            'actionConfirm' : Confirm(),
+            'actionSeePost' : EmptyAction()
             }
 
     def update(self, payload_actions):
