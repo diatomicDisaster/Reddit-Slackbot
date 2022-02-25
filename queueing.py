@@ -62,16 +62,17 @@ def find_requests(moditem):
         else:
             continue
     if len(recieved_timestamps) == 0:
-        return None
+        return ((), ())
     else:
         # TODO Consider switching to two lists to enable iterating on null results
-        return zip(*sorted(zip(requests, recieved_timestamps), key=lambda z: z[1]))
+        sortedrequests, sortedtimestamps = zip(*sorted(zip(requests, recieved_timestamps), key=lambda z: z[1]))
+        return sortedrequests, sortedtimestamps
 
 def process_responses(moditem):
     """Check for responses to mod item message."""
-    requests = find_requests(moditem)
+    requests, timestamps = find_requests(moditem)
     if requests:
-        for request, timestamp in requests:
+        for request in requests:
             moderator = request['user']['id']
             if moderator in moditem.responses:
                 moditem.responses[moderator].update(request['actions'])
@@ -113,9 +114,9 @@ def cleanup_json_files(incomplete_items):
         print(jsonstr, file=itemfile)
     keepjson_ts = []
     for item in incomplete_items.values():
-        requests = find_requests(item)
+        requests, timestamps = find_requests(item)
         if requests:
-            for request, timestamp in requests:
+            for request in requests:
                 keepjson_ts.append(request)
     for postfile in os.listdir(os.fsencode(POST_DIR)):
         if (filename := os.fsdecode(postfile)).strip('.json') not in keepjson_ts:

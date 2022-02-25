@@ -1,4 +1,69 @@
 {
+	"blocks": [
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "plain_text",
+					"text": "1st January 1970"
+				}
+			]
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "<https://reddit.com/r/spacex|An example title>"
+			}
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "mrkdwn",
+					"text": "u/ModeHopper"
+				}
+			]
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*Votes on this post:*"
+			}
+		},
+		{
+			"type": "section",
+			"fields": [
+				{
+					"type": "mrkdwn",
+					"text": "- modehopper: +1\n\t Q1, Q2, Q2.1"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "- Rusybeancake: +0.5\n\t Q1"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "- Hitura_nobad: +1\n\t Q2, Q2.1"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "- CAM-Gerlach: -1\n\t Q1, Q2, Q2.1, Q4.1, Q4.2"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "- Yoweigh: 0"
+				}
+			]
+		}
+	]
+}
+
+{
     "blocks":[
     {
         "type": "section",

@@ -1,4 +1,69 @@
 from datetime import datetime, timezone
+# from modfromslack.types import ModSubmission, SubmissionResponse
+
+# def build_response_block(user, response: SubmissionResponse):
+#     vote = response.actions['actionApproveRemove'].value
+#     textstring = f"- {user}: {vote}"
+#     if response.actions['actionRemovalReason'].value:
+#         text_string += "\n\t"
+#     for reason in response.actions['actionRemovalReason'].value:
+#         text_string += f" {reason},"
+#     textstring = text_string.rstrip(",")
+#     responseblock = {
+#         "type": "mrkdwn",
+#         "text": textstring
+#     }
+#     return responseblock
+
+# def build_archive_blocks(modsubmission: ModSubmission):
+#     responselist = []
+#     for user, response in modsubmission.responses.items():
+#         responseblock = build_response_block()
+#         responselist.append(responseblock)
+#     archiveblocks = {
+#         "blocks": [
+#             {
+#                 "type": "context",
+#                 "elements": [
+#                     {
+#                         "type": "plain_text",
+#                         "text": "1st January 1970"
+#                     }
+#                 ]
+#             },
+#             {
+#                 "type": "section",
+#                 "text": {
+#                     "type": "mrkdwn",
+#                     "text": "<https://reddit.com/r/spacex|An example title>"
+#                 }
+#             },
+#             {
+#                 "type": "context",
+#                 "elements": [
+#                     {
+#                         "type": "mrkdwn",
+#                         "text": "u/ModeHopper"
+#                     }
+#                 ]
+#             },
+#             {
+#                 "type": "divider"
+#             },
+#             {
+#                 "type": "section",
+#                 "text": {
+#                     "type": "mrkdwn",
+#                     "text": "*Votes on this post:*"
+#                 }
+#             },
+#             {
+#                 "type": "section",
+#                 "fields": responselist
+#             }
+#         ]
+#     }
+
 
 def build_submission_blocks(
     created_unix, 
@@ -32,7 +97,7 @@ def build_submission_blocks(
     permalinkstring = f"https://reddit.com{permalink}"
     
     # Slack API blocks
-    blocks = [
+    submissionblocks = [
         # Preamble
         {
             "type": "section",
@@ -351,4 +416,4 @@ def build_submission_blocks(
             ]
         }
     ]
-    return blocks
+    return submissionblocks

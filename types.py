@@ -1,8 +1,10 @@
 
 import abc
+import os
 from typing import Type
 
 from slack_sdk.errors import SlackApiError
+from slack_sdk import WebClient
 
 from modfromslack.payload import build_submission_blocks
 from modfromslack.exceptions import MsgSendError, ActionSequenceError
@@ -53,6 +55,7 @@ class Confirm(ModAction):
     """Mod action confirming selection."""
     def __init__(self):
         self.value = False
+        super().__init__()
     
     def _update(self, action):
         """Confirm previous inputs"""
@@ -126,14 +129,18 @@ class ModSubmission(ModItem):
             raise MsgSendError("Failed to send item to Slack.") from error
     
     def delete_msg(self, client):
-        """Delete mod item message from channel"""
-        try:
-            result = client.chat_delete(channel=self.channel, ts=self.message_ts)
-        except SlackApiError as error:
-            if error.response["error"] == 'message_not_found':
-                pass
-            else:
-                raise error
+        """Delete replies to mod item message"""
+        response = client.conversations_replies(
+            channel=self.channel, 
+            ts=self.message_ts
+        )
+        user_client = WebClient(token=os.environ.get("SLACK_USER_TOKEN"))
+        for message in response["messages"][::-1]:
+            reply_response = user_client.chat_delete(
+                channel=self.channel, 
+                ts=message["ts"],
+                as_user=True
+            )
 
     def initialize_response(self, moderator):
         """Initialize a new moderator response object"""
