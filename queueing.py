@@ -75,10 +75,10 @@ def process_responses(moditem):
         for request in requests:
             moderator = request['user']['id']
             if moderator in moditem.responses:
-                moditem.responses[moderator].update(request['actions'])
+                moditem.responses[moderator].update(request)
             else:
                 moditem.initialize_response(moderator)
-                moditem.responses[moderator].update(request['actions'])
+                moditem.responses[moderator].update(request)
 
 def check_reddit_queue(client, sub, knownitems=None):
     """Check subreddit modqueue for unmoderated items."""
@@ -139,7 +139,7 @@ def check_slack_queue(client, reddit, knownitems):
             incomplete[moditem.prawitem] = moditem
             continue
         complete[moditem.prawitem] = moditem
-        moditem.delete_msg(client)
+        moditem.complete_cleanup(client)
     cleanup_json_files(incomplete_items=incomplete)
     knownitems = incomplete
     return knownitems

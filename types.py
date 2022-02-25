@@ -6,9 +6,20 @@ from typing import Type
 from slack_sdk.errors import SlackApiError
 from slack_sdk import WebClient
 
-from modfromslack.payload import build_submission_blocks
+from modfromslack.payload import (
+    build_submission_blocks, 
+    build_response_block, 
+    build_archive_blocks
+)
 from modfromslack.exceptions import MsgSendError, ActionSequenceError
-from modfromslack.config import APPROVAL_THRESHOLD, REMOVAL_THRESHOLD, SUBMISSION_CHANNEL
+from modfromslack.config import (
+    APPROVAL_THRESHOLD, 
+    REMOVAL_THRESHOLD, 
+    SUBMISSION_CHANNEL,
+    ARCHIVE_CHANNEL
+)
+
+import jsonpickle
 
 # TODO Add functionality for flairing posts
 # TODO Add functionality for awarding posts
@@ -39,8 +50,10 @@ class ApproveRemove(ModAction):
         self.value = None
         super().__init__()
 
-    def update(self, action):
-        self.value = action['selected_option']['value']
+    # def _update(self, action):
+    #     self.value = action['selected_option']['value']
+    def update(self, state):
+        self.value = state['selected_option']['value']
 
 class RemovalReason(ModAction):
     """Mod action defining removal reasons."""
@@ -48,9 +61,22 @@ class RemovalReason(ModAction):
         self.value = []
         super().__init__()
     
-    def _update(self, action):
-        self.value = [option['value'] for option in action['selected_options']]
+    # def _update(self, action):
+    #     self.value = [option['value'] for option in action['selected_options']]
+    def update(self, state):
+        self.value = [option['value'] for option in state['selected_options']]
 
+class Modnote(ModAction):
+    """Mod action to add a modnote."""
+    def __init__(self):
+        self.value = None
+        super().__init__()
+
+    def update(self, state):
+        """Retrieve modnote"""
+        self.value = state['value']
+        super().__init__()
+        
 class Confirm(ModAction):
     """Mod action confirming selection."""
     def __init__(self):
@@ -71,23 +97,34 @@ class SubmissionResponse:
     def __init__(self, parentmsg_ts):
         self.parentmsg_ts = parentmsg_ts
         self.actions = {
-            'actionApproveRemove' : ApproveRemove(),
-            'actionRemovalReason' : RemovalReason(),
+            #'actionApproveRemove' : ApproveRemove(),
+            #'actionRemovalReason' : RemovalReason(),
             'actionConfirm' : Confirm(),
             'actionSeePost' : EmptyAction()
             }
+        self.states = {
+            'actionApproveRemove' : ApproveRemove(),
+            'actionRemovalReason' : RemovalReason(),
+            'actionModnote' : Modnote()
+            }
 
-    def update(self, payload_actions):
+    def update(self, request):
         """Update response with actions from Slack payload."""
-        for action in payload_actions:
-            if action['action_ts'] < self.parentmsg_ts:
-                raise ActionSequenceError(
-                    "parent message", 
-                    "action",
-                    afterword="Something went wrong when updating responses, "
-                    "if app has rebooted, try clearing known item JSON file."
-                    )
-            self.actions[action['action_id']].update(action)
+        for action in request['actions']:
+            if action['action_id'] in self.actions:
+                if action['action_ts'] < self.parentmsg_ts:
+                    raise ActionSequenceError(
+                        "parent message", 
+                        "action",
+                        afterword="Something went wrong when updating responses, "
+                        "if app has rebooted, try clearing known item JSON file."
+                        )
+                self.actions[action['action_id']].update(action)
+        for blockid, blockvalue in request['state']['values'].items():
+            for state in self.states:
+                if state in blockvalue:
+                    self.states[state].update(blockvalue[state])
+
 
 class ModItem(object):
     """Stores information about the state of an item in the modqueue."""
@@ -101,7 +138,8 @@ class ModSubmission(ModItem):
 
     _approval_threshold : float = APPROVAL_THRESHOLD
     _removal_threshold : float = REMOVAL_THRESHOLD
-    channel : str = SUBMISSION_CHANNEL
+    submissionchannel : str = SUBMISSION_CHANNEL
+    archivechannel : str = ARCHIVE_CHANNEL
     _ResponseType : Type = SubmissionResponse
 
     def __init__(self, prawitem):
@@ -119,7 +157,7 @@ class ModSubmission(ModItem):
         # sources do not appear to permalink thumbnails.
         try:
             result = client.chat_postMessage(
-                blocks=self.msg_payload, channel=self.channel, 
+                blocks=self.msg_payload, channel=self.submissionchannel, 
                 text="New modqueue item", unfurl_links=False, unfurl_media=False
             )
             result.validate()
@@ -127,20 +165,53 @@ class ModSubmission(ModItem):
             return result
         except SlackApiError as error:
             raise MsgSendError("Failed to send item to Slack.") from error
-    
-    def delete_msg(self, client):
+
+    def _delete_msg(self, client):
         """Delete replies to mod item message"""
         response = client.conversations_replies(
-            channel=self.channel, 
+            channel=self.submissionchannel, 
             ts=self.message_ts
         )
         user_client = WebClient(token=os.environ.get("SLACK_USER_TOKEN"))
         for message in response["messages"][::-1]:
             reply_response = user_client.chat_delete(
-                channel=self.channel, 
+                channel=self.submissionchannel, 
                 ts=message["ts"],
                 as_user=True
             )
+
+    def _send_archive(self, client):
+        """Send archive message after mod actions are complete"""
+        responseblocks = []
+        for userid, modresponse in self.responses.items():
+            response = client.users_info(user=userid)
+            name = response["user"]["real_name"]
+            responseblocks.append(
+                build_response_block(
+                    name, 
+                    modresponse.states["actionApproveRemove"].value, 
+                    modresponse.states["actionRemovalReason"].value
+                )
+            )
+        archiveblocks = build_archive_blocks(
+            self.created_utc, 
+            self.title,
+            self.author,
+            self.permalink,
+            responseblocks,
+        )
+        with open("debugdump.json", "w+") as f:
+            blocksjson = jsonpickle.encode(archiveblocks)
+            print(blocksjson, file=f)
+        result = client.chat_postMessage(
+            blocks=archiveblocks, channel=self.archivechannel,
+            text="Archived modqueue item", unfurl_links=False, unfurl_media=False
+        )
+
+    def complete_cleanup(self, client):
+        """Delete message and send to archive after completion"""
+        self._send_archive(client)
+        self._delete_msg(client)
 
     def initialize_response(self, moderator):
         """Initialize a new moderator response object"""
@@ -161,13 +232,13 @@ class ModSubmission(ModItem):
             raise MsgSendError(
                 f"{error.obj!r} object is missing field {error.name!r}."
             )
-
+    
     @property
     def approve_or_remove(self):
         votesum = 0
         for response in self.responses.values():
             if response.actions['actionConfirm'].value: 
-                votesum += float(response.actions['actionApproveRemove'].value)
+                votesum += float(response.states['actionApproveRemove'].value)
         if votesum >= self._approval_threshold:
             return "approve"
         elif votesum <= self._removal_threshold:
@@ -179,6 +250,6 @@ class ModSubmission(ModItem):
     def removal_reasons(self):
         unique_reasons = []
         for response in self.responses:
-            for reason in response.actions['actionRemovalReason'].value:
+            for reason in response.states['actionRemovalReason'].value:
                 if reason not in unique_reasons: unique_reasons.append(reason)
         return sorted(unique_reasons)

@@ -1,68 +1,89 @@
 from datetime import datetime, timezone
-# from modfromslack.types import ModSubmission, SubmissionResponse
 
-# def build_response_block(user, response: SubmissionResponse):
-#     vote = response.actions['actionApproveRemove'].value
-#     textstring = f"- {user}: {vote}"
-#     if response.actions['actionRemovalReason'].value:
-#         text_string += "\n\t"
-#     for reason in response.actions['actionRemovalReason'].value:
-#         text_string += f" {reason},"
-#     textstring = text_string.rstrip(",")
-#     responseblock = {
-#         "type": "mrkdwn",
-#         "text": textstring
-#     }
-#     return responseblock
 
-# def build_archive_blocks(modsubmission: ModSubmission):
-#     responselist = []
-#     for user, response in modsubmission.responses.items():
-#         responseblock = build_response_block()
-#         responselist.append(responseblock)
-#     archiveblocks = {
-#         "blocks": [
-#             {
-#                 "type": "context",
-#                 "elements": [
-#                     {
-#                         "type": "plain_text",
-#                         "text": "1st January 1970"
-#                     }
-#                 ]
-#             },
-#             {
-#                 "type": "section",
-#                 "text": {
-#                     "type": "mrkdwn",
-#                     "text": "<https://reddit.com/r/spacex|An example title>"
-#                 }
-#             },
-#             {
-#                 "type": "context",
-#                 "elements": [
-#                     {
-#                         "type": "mrkdwn",
-#                         "text": "u/ModeHopper"
-#                     }
-#                 ]
-#             },
-#             {
-#                 "type": "divider"
-#             },
-#             {
-#                 "type": "section",
-#                 "text": {
-#                     "type": "mrkdwn",
-#                     "text": "*Votes on this post:*"
-#                 }
-#             },
-#             {
-#                 "type": "section",
-#                 "fields": responselist
-#             }
-#         ]
-#     }
+# Dictionary of month names
+months = {
+    1: 'January', 2: 'February', 3: 'March',
+    4: 'April', 5: 'May', 6: 'June', 7: 'July',
+    8: 'August', 9: 'September', 10: 'October',
+    11: 'November', 12: 'December'
+}
+
+# Lambda function for converting cardinal to ordinal
+ordinal = lambda n : "%d%s" % (n,"tsnrhtdd"[(n//10%10!=1)*(n%10<4)*n%10::4])
+
+
+def build_response_block(name, vote, removalreasons):
+    """Build blocks for moderator responses in archive message"""
+    textstring = f"{name}: {vote}"
+    if removalreasons:
+        textstring += "\n\t"
+        for reason in removalreasons:
+            textstring += f" {reason},"
+        textstring = textstring.rstrip(",")
+    responseblock = {
+        "type": "mrkdwn",
+        "text": textstring
+    }
+    return responseblock
+
+def build_archive_blocks(
+    created_unix, 
+    title,
+    authorname,
+    permalink,
+    responseblocks
+):
+    """Build Slack API blocks for archive message."""
+    timestamp = datetime.fromtimestamp(created_unix, tz=timezone.utc)
+    timestring = f"Created {months[timestamp.month]} {ordinal(timestamp.day)}  at {timestamp:%H:%M}"
+    titlestring = f"<https://reddit.com{permalink}|{title}>"
+    authorstring = f"Author: u/{authorname}"
+    archiveblocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": titlestring
+            }
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "plain_text",
+                    "text": timestring
+                }
+            ]
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": authorstring
+                }
+            ]
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Votes on this post:*"
+            }
+        },
+        {
+            "type": "section",
+            "fields": responseblocks,
+        },
+        {
+            "type": "divider"
+        },
+    ]
+    return archiveblocks
 
 
 def build_submission_blocks(
@@ -77,17 +98,6 @@ def build_submission_blocks(
     # TODO Dynamically generate blocks based on user-defined config file with
     #  custom subreddit removal messages.
     # TODO Add block element for flairing posts functionality.
-    
-    # Dictionary of month names
-    months = {
-        1: 'January', 2: 'February', 3: 'March',
-        4: 'April', 5: 'May', 6: 'June', 7: 'July',
-        8: 'August', 9: 'September', 10: 'October',
-        11: 'November', 12: 'December'
-    }
-
-    # Lambda function for converting cardinal to ordinal
-    ordinal = lambda n : "%d%s" % (n,"tsnrhtdd"[(n//10%10!=1)*(n%10<4)*n%10::4])
 
     # Convert PRAW object attributes to message strings
     timestamp = datetime.fromtimestamp(created_unix, tz=timezone.utc)
@@ -109,7 +119,14 @@ def build_submission_blocks(
         {
             "type": "divider"
         },
-        # Date and time context
+        # Submission info
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": titlestring
+            }
+        },
         {
             "type": "context",
             "elements": [
@@ -118,14 +135,6 @@ def build_submission_blocks(
                     "text": timestring
                 }
             ]
-        },
-        # Submission info
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": titlestring
-            }
         },
 		{
 			"type": "image",
@@ -173,7 +182,7 @@ def build_submission_blocks(
                                 "text": "Approve",
                                 "emoji": True
                             },
-                            "value": "1"
+                            "value": "+1"
                         },
                         {
                             "text": {
@@ -400,6 +409,19 @@ def build_submission_blocks(
                 "emoji": True
             }
         },
+		{
+			"type": "input",
+			"element": {
+				"type": "plain_text_input",
+				"multiline": True,
+				"action_id": "actionModnote"
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Add modnote:",
+				"emoji": True
+			}
+		},
         {
             "type": "actions",
             "elements": [
