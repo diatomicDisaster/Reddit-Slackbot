@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 
-
 # Dictionary of month names
 months = {
     1: 'January', 2: 'February', 3: 'March',
@@ -36,7 +35,7 @@ def build_archive_blocks(
 ):
     """Build Slack API blocks for archive message."""
     timestamp = datetime.fromtimestamp(created_unix, tz=timezone.utc)
-    timestring = f"Created {months[timestamp.month]} {ordinal(timestamp.day)}  at {timestamp:%H:%M}"
+    timestring = f"Created {months[timestamp.month]} {ordinal(timestamp.day)} at {timestamp:%H:%M}"
     titlestring = f"<https://reddit.com{permalink}|{title}>"
     authorstring = f"Author: u/{authorname}"
     archiveblocks = [
@@ -91,7 +90,8 @@ def build_submission_blocks(
     title, 
     url, 
     authorname, 
-    thumbnail_url, 
+    thumbnail_url,
+    selftext,
     permalink
 ):
     """Build Slack API blocks for new submission message."""
@@ -121,13 +121,6 @@ def build_submission_blocks(
         },
         # Submission info
         {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": titlestring
-            }
-        },
-        {
             "type": "context",
             "elements": [
                 {
@@ -136,11 +129,6 @@ def build_submission_blocks(
                 }
             ]
         },
-		{
-			"type": "image",
-			"image_url": thumbnail_url,
-			"alt_text": "thumbnail"
-		},
         {
             "type": "context",
             "elements": [
@@ -149,6 +137,13 @@ def build_submission_blocks(
                     "text": authorstring
                 }
             ]
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": titlestring
+            }
         },
         # Moderator actions
         {
@@ -438,4 +433,22 @@ def build_submission_blocks(
             ]
         }
     ]
+    if thumbnail_url == 'self':
+        submissionblocks.insert(5,
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": selftext[:300] + "..." if len(selftext) > 300 else selftext
+                }
+            }
+        )
+    else:
+        submissionblocks.insert(5, 
+            {
+                "type": "image",
+                "image_url": thumbnail_url,
+                "alt_text": "thumbnail"
+            }
+        )
     return submissionblocks

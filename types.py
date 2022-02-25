@@ -148,6 +148,7 @@ class ModSubmission(ModItem):
         self.url = prawitem.url
         self.author = prawitem.author.name
         self.thumbnail = prawitem.thumbnail
+        self.text = prawitem.selftext
         self.permalink = prawitem.permalink
         super().__init__(prawitem)
 
@@ -225,7 +226,8 @@ class ModSubmission(ModItem):
                 self.title, 
                 self.url, 
                 self.author, 
-                self.thumbnail, 
+                self.thumbnail,
+                self.text,
                 self.permalink
             )
         except AttributeError as error:
