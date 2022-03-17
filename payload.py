@@ -84,6 +84,16 @@ def build_archive_blocks(
     ]
     return archiveblocks
 
+def rule_select_json(value, title):
+    block_json = {
+        "text": {
+            "type": "plain_text",
+            "text": title,
+            "emoji": False,
+        },
+        "value": value
+    }
+    return block_json
 
 def build_submission_blocks(
     created_unix, 

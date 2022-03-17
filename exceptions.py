@@ -19,8 +19,6 @@ class ModFromSlackError(Exception):
 
 class MsgSendError(ModFromSlackError):
     """Failed to send Slack message."""
-    def __init__(self, message) -> None:
-        super().__init__(message)
 
 class SequenceError(ModFromSlackError):
     """Something has happened in the wrong order."""
@@ -55,4 +53,6 @@ class ActionSequenceError(SequenceError):
             preamble=_preamble, 
             afterword=afterword
         )
-                
+
+class ConfigError(ModFromSlackError):
+    """Error in config file format."""

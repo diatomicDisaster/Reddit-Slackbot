@@ -7,24 +7,23 @@ from builtins import FileNotFoundError
 import praw
 import jsonpickle
 
-# Local imports
-from modfromslack.config import KNOWN_ITEMS, SUBMISSION_CHANNEL, POST_DIR
-from modfromslack.types import ModSubmission
+# Local imports 
+from reddack.core import (
+    Reddack, 
+    ReddackSubmission
+)
 
-def item_is_known(prawitem):
+def known_items(knownitems_path):
     """Checks if item ID is in JSON file's list of known items"""
     # TODO Detect when message has been sent to Slack queue but not added to
     # the list of known modqueue items
     try:
-        with open(KNOWN_ITEMS, 'r') as itemfile:
+        with open(knownitems_path, 'r') as itemfile:
             jsonstr = f'{itemfile.read()}'
             knownitems = jsonpickle.decode(jsonstr)
     except (json.JSONDecodeError, FileNotFoundError):
         knownitems = {}
-    if prawitem.id in knownitems.keys():
-        return True, knownitems
-    else:
-        return False, knownitems
+    return knownitems
 
 def find_latest(message_ts):
     """Retrieves the latest POST request timestamp for a given message."""
@@ -45,14 +44,14 @@ def find_latest(message_ts):
             continue
     return latest_ts
 
-def find_requests(moditem):
+def find_requests(moditem, post_dir):
     """Retrieves all POST requests for a given mod item, returns sorted list."""
     recieved_timestamps = [] # POST request recieved timestamp
     requests = [] # POST request request
-    for postfile in os.listdir(os.fsencode(POST_DIR)):
+    for postfile in os.listdir(os.fsencode(post_dir)):
         if (filename := os.fsdecode(postfile)).endswith('.json'):
             request_ts = filename.strip('.json')
-            with open(os.path.join(POST_DIR, filename), 'r') as file:
+            with open(os.path.join(post_dir, filename), 'r') as file:
                 request = json.load(file)
             if request['container']['message_ts'] == moditem.message_ts:
                 recieved_timestamps.append(request_ts)
@@ -64,13 +63,12 @@ def find_requests(moditem):
     if len(recieved_timestamps) == 0:
         return ((), ())
     else:
-        # TODO Consider switching to two lists to enable iterating on null results
         sortedrequests, sortedtimestamps = zip(*sorted(zip(requests, recieved_timestamps), key=lambda z: z[1]))
         return sortedrequests, sortedtimestamps
 
-def process_responses(moditem):
+def process_responses(moditem, post_dir):
     """Check for responses to mod item message."""
-    requests, timestamps = find_requests(moditem)
+    requests, timestamps = find_requests(moditem, post_dir)
     if requests:
         for request in requests:
             moderator = request['user']['id']
@@ -80,67 +78,82 @@ def process_responses(moditem):
                 moditem.initialize_response(moderator)
                 moditem.responses[moderator].update(request)
 
-def check_reddit_queue(client, sub, knownitems=None):
+def check_reddit_queue(reddack: Reddack, knownitems):
     """Check subreddit modqueue for unmoderated items."""
-    for item in sub.mod.modqueue(limit=None):
+    newitems = {}
+    for item in reddack.subreddit.mod.modqueue(limit=None):
         # Check if item is comment or submission
         if isinstance(item, praw.models.Submission):
-            ModItem = ModSubmission
+            ReddackItem = ReddackSubmission
         else:
             print("Ignoring non-submission item.")
             continue
         # Check if item is known
-        if knownitems is None:
-            isknown, knownitems = item_is_known(item)
-        else:
-            isknown = True if item.id in knownitems else False
-        # Check for responses or send initial message
+        isknown = True if item.id in knownitems else False
         if isknown:
             continue
         else:
-            moditem = ModItem(item)
-            moditem.send_msg(client)
-            # Add to known items
-            knownitems[item.id] = moditem
-            with open(KNOWN_ITEMS, 'w+') as itemfile:
-                jsonstr = jsonpickle.encode(knownitems)
-                print(jsonstr, file=itemfile)
+            newitems[item.id] = ReddackItem(item)
+    return newitems
+
+def update_slack_queue(reddack: Reddack, newitems, knownitems):
+    for id, moditem in newitems.items():
+        moditem.send_msg(
+            reddack.slack_client, 
+            reddack.channels[type(moditem)]['queue']
+        )
+        # Add to known items
+        knownitems[id] = moditem
     return knownitems
 
-def cleanup_json_files(incomplete_items):
-    """Remove POST request files for completed items and clean known item JSON"""
-    with open(KNOWN_ITEMS, 'w+') as itemfile:
-        jsonstr = jsonpickle.encode(incomplete_items)
+def update_knownitems(knownitems, path):
+    with open(path, 'w+') as itemfile:
+        jsonstr = jsonpickle.encode(knownitems)
         print(jsonstr, file=itemfile)
+
+def cleanup_postrequest_json(incomplete_items, path):
+    """Remove POST request files for completed items"""
     keepjson_ts = []
     for item in incomplete_items.values():
         requests, timestamps = find_requests(item)
         if requests:
             for request in requests:
                 keepjson_ts.append(request)
-    for postfile in os.listdir(os.fsencode(POST_DIR)):
+    for postfile in os.listdir(os.fsencode(path)):
         if (filename := os.fsdecode(postfile)).strip('.json') not in keepjson_ts:
-            os.remove(os.path.join(POST_DIR, filename))
+            os.remove(os.path.join(path, filename))
 
-def check_slack_queue(client, reddit, knownitems):
+def cleanup_knownitems_json(incomplete_items, path):
+    """Clean known item JSON"""
+    with open(path, 'w+') as itemfile:
+        jsonstr = jsonpickle.encode(incomplete_items)
+        print(jsonstr, file=itemfile)
+
+def check_slack_queue(reddack: Reddack, knownitems):
     """Check Slack items for moderation actions"""
     incomplete = {}
     complete = {}
     if knownitems is None:
         knownitems = {}
     for moditem in knownitems.values():
-        process_responses(moditem)
-        if moditem.approve_or_remove == "approve":
-            reddit.submission(moditem.prawitem).mod.approve()
-        elif moditem.approve_or_remove == "remove":
-            reddit.submission(moditem.prawitem).mod.remove()
+        kind = type(moditem)
+        process_responses(moditem, reddack.post_requests_path)
+        if moditem.approve_or_remove(reddack.thresholds[kind]) == "approve":
+            reddack.praw_client.submission(moditem.prawitem).mod.approve()
+        elif moditem.approve_or_remove(reddack.thresholds[kind]) == "remove":
+            reddack.praw_client.submission(moditem.prawitem).mod.remove()
             # TODO Add method for applying removal reasons and sending modmail
         else:
             incomplete[moditem.prawitem] = moditem
             continue
         complete[moditem.prawitem] = moditem
-        moditem.complete_cleanup(client)
-    cleanup_json_files(incomplete_items=incomplete)
+        moditem.complete_cleanup(
+            reddack.slack_client, 
+            reddack.slack_user_client, 
+            reddack.channels[kind]
+        )
+    cleanup_knownitems_json(incomplete, reddack.known_items_path)
+    cleanup_postrequest_json(incomplete, reddack.post_requests_path)
     knownitems = incomplete
     return knownitems
     
