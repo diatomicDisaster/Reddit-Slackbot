@@ -1,0 +1,17 @@
+LICENSE
+README.md
+pyproject.toml
+setup.cfg
+src/reddack/__init__.py
+src/reddack/__main__.py
+src/reddack/cli.py
+src/reddack/config.py
+src/reddack/core.py
+src/reddack/exceptions.py
+src/reddack/payload.py
+src/reddack/queueing.py
+src/reddack/slack.py
+src/reddack.egg-info/PKG-INFO
+src/reddack.egg-info/SOURCES.txt
+src/reddack.egg-info/dependency_links.txt
+src/reddack.egg-info/top_level.txt

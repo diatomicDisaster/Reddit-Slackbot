@@ -1,0 +1,22 @@
+Metadata-Version: 2.1
+Name: reddack
+Version: 0.0.1
+Summary: A suite of tools for moderating Reddit communities via Slack using interactive messages and the Slack Blocks UI.
+Home-page: https://github.com/diatomicDisaster/reddack
+Author: Wilfrid Somogyi
+Author-email: wilfridsomogyi@gmail.com
+License: UNKNOWN
+Project-URL: Bug Tracker, https://github.com/diatomicDisaster/reddack/issues
+Keywords: reddit slack api praw bot subreddit moderation mod moderator
+Platform: UNKNOWN
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# Placeholder README
+
