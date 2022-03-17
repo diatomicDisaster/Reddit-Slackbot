@@ -3,7 +3,8 @@
 <!-- Framework -->
 [![PyPI Python version](https://img.shields.io/pypi/pyversions/reddack?label=Python)](https://pypi.org/project/submanager/)  <!-- markdown-link-check-disable-line -->
 [![Framework](https://img.shields.io/badge/Framework-PRAW-orange.svg)](https://github.com/pytest-dev/pytest)
-[![Framework](https://img.shields.io/badge/Framework-PRAW-orange.svg)](https://github.com/pytest-dev/pytest)
+[![Framework](https://img.shields.io/badge/Framework-NGINX-brightgreen)](https://github.com/pytest-dev/pytest)
+[![Framework](https://img.shields.io/badge/Framework-Slack-lightgrey)](https://github.com/pytest-dev/pytest)
 
 <!-- Status -->
 [![License](https://img.shields.io/github/license/diatomicDisaster/reddack?label=License)](https://github.com/r-spacex/submanager/blob/master/LICENSE.txt)
