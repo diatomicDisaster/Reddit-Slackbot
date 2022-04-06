@@ -11,7 +11,9 @@ from typing import (
 from pathlib import Path
 
 # Local imports
+import reddack
 import reddack.config
+import reddack.queueing
 
 def create_arg_parser() -> argparse.ArgumentParser:
     """Create the argument parser for the CLI"""
@@ -30,12 +32,20 @@ def create_arg_parser() -> argparse.ArgumentParser:
         help="The path to the config file."
     )
 
+    parser.add_argument(
+        "--queue",
+        action="store_true"
+    )
+
     return parser
 
 def process_args(parsedargs):
     configpath = Path(parsedargs.configpath)
     if configpath.suffix == ".json":
-        reddack.config.reddack(configpath)
+        reddack_objs = reddack.config.reddack_from_file(configpath)
+    if parsedargs.queue:
+        for objs in reddack_objs:
+            reddack.queueing.sync(objs)
 
 def cli(sys_argv: Sequence[str] | None = None) -> None:
     """Parse the CLI arguments"""

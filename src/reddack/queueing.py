@@ -25,16 +25,16 @@ def known_items(knownitems_path):
         knownitems = {}
     return knownitems
 
-def find_latest(message_ts):
+def find_latest(message_ts, post_dir):
     """Retrieves the latest POST request timestamp for a given message."""
     latest_ts = message_ts
-    for postfile in os.listdir(os.fsencode(POST_DIR)):
+    for postfile in os.listdir(os.fsencode(post_dir)):
         if (filename := os.fsdecode(postfile)).endswith('.json'):
             request_ts = filename.strip('.json')
             if request_ts < latest_ts: 
                 continue
             else:
-                with open(os.path.join(POST_DIR, filename), 'r') as file:
+                with open(os.path.join(post_dir, filename), 'r') as file:
                     request = json.load(file)
                 if request['container']['message_ts'] == message_ts:
                     if request_ts > latest_ts : latest_ts = request_ts
@@ -157,3 +157,10 @@ def check_slack_queue(reddack: Reddack, knownitems):
     knownitems = incomplete
     return knownitems
     
+def sync(reddack):
+    knownitems = known_items(reddack.known_items_path)
+    newitems = check_reddit_queue(reddack, knownitems)
+    knownitems = update_slack_queue(reddack, newitems, knownitems)
+    update_knownitems(knownitems, reddack.known_items_path)
+    knownitems = check_slack_queue(reddack, knownitems)
+    update_knownitems(knownitems, reddack.known_items_path)
