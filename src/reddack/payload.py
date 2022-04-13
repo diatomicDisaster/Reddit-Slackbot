@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+
 # Dictionary of month names
 months = {
     1: 'January', 2: 'February', 3: 'March',
@@ -95,18 +96,32 @@ def rule_select_json(value, title):
     }
     return block_json
 
-def build_submission_blocks(
+def build_removal_block(rules):
+    "Build list of Slack API multi_static_select options for removal reasons"
+    removal_options = []
+    for name, rule in rules.items():
+        option = {
+            "text": {
+                "type": "plain_text",
+                "text": rule["shorttext"],
+                "emoji": False
+            },
+            "value": name
+        }
+        removal_options.append(option)
+    return removal_options
+
+def build_submission_block(
     created_unix, 
     title, 
     url, 
     authorname, 
     thumbnail_url,
     selftext,
-    permalink
+    permalink,
+    removal_options
 ):
     """Build Slack API blocks for new submission message."""
-    # TODO Dynamically generate blocks based on user-defined config file with
-    #  custom subreddit removal messages.
     # TODO Add block element for flairing posts functionality.
 
     # Convert PRAW object attributes to message strings
@@ -212,200 +227,7 @@ def build_submission_blocks(
                     "text": "Select options",
                     "emoji": True
                 },
-                "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q1 (Respectful): Hostility or personal attacks",
-                            "emoji": True
-                        },
-                        "value": "Q1"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q1.3 (Respectful - Policy): Plagiarism, spam, misleading or illegality.",
-                            "emoji": True
-                        },
-                        "value": "Q1.3"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q2.1 (Relevant - Focused): Not about SpaceX (generic)",
-                            "emoji": True
-                        },
-                        "value": "Q2.1"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q2.1.1 (Relevant - Focused - Lounge): Tangential matters to Lounge",
-                            "emoji": True
-                        },
-                        "value": "Q2.1.1"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q2.1.2 (Relevant - Focused - Starlink): Minor Starlink news to r/Starlink",
-                            "emoji": True
-                        },
-                        "value": "Q2.1.2"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q2.1.3 (Relevant - Focused - NASA): NASA matters to r/NASA",
-                            "emoji": True
-                        },
-                        "value": "Q2.1.3"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q2.2 (Relevant - Specific): Fanart, fandom, jobs, meta and speculation",
-                            "emoji": True
-                        },
-                        "value": "Q2.2"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q3.1 (Novel - Salient): Duplicates or not enough new info",
-                            "emoji": True
-                        },
-                        "value": "Q3.1"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q3.2 (Novel - Tweetstorm): Tweetstorms to original thread",
-                            "emoji": True
-                        },
-                        "value": "Q3.2"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q3.3 (Novel - Question): Simple questions to wiki, FAQ, or Google",
-                            "emoji": True
-                        },
-                        "value": "Q3.3"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q3.4 (Novel - Current): Out of date or anniversary posts ",
-                            "emoji": True
-                        },
-                        "value": "Q3.4"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q4.1 (Substantive - Meme): Jokes, memes, and pop culture to Masterrace",
-                            "emoji": True
-                        },
-                        "value": "Q4.1"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q4.2 (Substantive - Contribute): Low-quality posts to Lounge",
-                            "emoji": True
-                        },
-                        "value": "Q4.2"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q4.3 (Substantive - Factual): Speculation, inflammatory or lacking evidence",
-                            "emoji": True
-                        },
-                        "value": "Q4.3"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q4.4 (Substantive - Reddiquite): Bad Reddiqute",
-                            "emoji": True
-                        },
-                        "value": "Q4.4"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q4.5 (Substantive - Personal): Non-newsworthy, opinion, photos or fluff",
-                            "emoji": True
-                        },
-                        "value": "Q4.5"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q5.1 (Wellformed - Format): Formatting issues or bad crosspost",
-                            "emoji": True
-                        },
-                        "value": "Q5.1"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q5.2 (Wellformed - Title): Clickbait, bad or non-matching titles",
-                            "emoji": True
-                        },
-                        "value": "Q5.2"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q5.3 (Wellformed - Link): Broken, dirty, AMP or paywalled links",
-                            "emoji": True
-                        },
-                        "value": "Q5.3"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q5.4 (Wellformed - Discuss): Straightforward/general questions",
-                            "emoji": True
-                        },
-                        "value": "Q5.4"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q5.5.1 (Wellformed - Thread - Launch): Launch thread updates and questions",
-                            "emoji": True
-                        },
-                        "value": "Q5.5.1"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q5.5.2 (Wellformed - Thread - Media): Media thread photos and articles",
-                            "emoji": True
-                        },
-                        "value": "Q5.5.2"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q5.5.3 (Wellformed - Thread - Campaign): Campaign updates and questions",
-                            "emoji": True
-                        },
-                        "value": "Q5.5.3"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Q5.5.4 (Welformed - Thread - Starship): Starship dev updates",
-                            "emoji": True
-                        },
-                        "value": "Q5.5.4"
-                    }
-                ],
+                "options": removal_options,
                 "action_id": "actionRemovalReason"
             },
             "label": {
@@ -414,6 +236,7 @@ def build_submission_blocks(
                 "emoji": True
             }
         },
+        # Custom moderator note
 		{
 			"type": "input",
 			"element": {
@@ -427,6 +250,7 @@ def build_submission_blocks(
 				"emoji": True
 			}
 		},
+        # Confirm inputs
         {
             "type": "actions",
             "elements": [
@@ -443,7 +267,9 @@ def build_submission_blocks(
             ]
         }
     ]
-    if thumbnail_url == 'self':
+    
+    # Handle thumbnail gracefully
+    if thumbnail_url == 'self': # Replace with preview for text posts
         submissionblocks.insert(5,
             {
                 "type": "section",
@@ -453,6 +279,8 @@ def build_submission_blocks(
                 }
             }
         )
+    elif not thumbnail_url: # Leave empty if no thumbnail url given
+        return submissionblocks
     else:
         submissionblocks.insert(5, 
             {

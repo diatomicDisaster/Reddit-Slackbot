@@ -2,6 +2,7 @@ LICENSE
 README.md
 pyproject.toml
 setup.cfg
+setup.py
 src/reddack/__init__.py
 src/reddack/__main__.py
 src/reddack/cli.py

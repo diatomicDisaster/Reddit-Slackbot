@@ -1,7 +1,5 @@
 from __future__ import annotations
 import abc
-from ast import Mod
-import os
 from typing import (
     Type,
     Union,
@@ -13,67 +11,52 @@ from pathlib import Path
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from praw import Reddit
+from praw.models import Submission
 import jsonpickle
 
 # Local imports
 from reddack.payload import (
-    build_submission_blocks, 
+    build_removal_block,
+    build_submission_block, 
     build_response_block, 
     build_archive_blocks
 )
 from reddack.exceptions import (
-    MsgSendError, 
-    ActionSequenceError
+    MsgSendError
 )
 from reddack.slack import (
-    Confirm,
-    ApproveRemove,
-    RemovalReason,
-    Modnote,
-    Action
+    ReddackResponse,
+    SubmissionResponse
+)
+from reddack.utils import (
+    get_known_items,
+    find_post_requests,
+    update_knownitems_file,
+    cleanup_knownitems_json,
+    cleanup_postrequest_json
 )
 
 # TODO Add functionality for flairing posts
 # TODO Add functionality for awarding posts
-
-class SubmissionResponse:
-    """Class for storing moderator responses to Slack mod item messages."""
-    def __init__(self, parentmsg_ts):
-        self.parentmsg_ts = parentmsg_ts
-        self.actions = {
-            'actionConfirm' : Confirm(),
-            'actionSeePost' : Action()
-            }
-        self.states = {
-            'actionApproveRemove' : ApproveRemove(),
-            'actionRemovalReason' : RemovalReason(),
-            'actionModnote' : Modnote()
-            }
-
-    def update(self, request):
-        """Update response with actions from Slack payload."""
-        for action in request['actions']:
-            if action['action_id'] in self.actions:
-                if action['action_ts'] < self.parentmsg_ts:
-                    raise ActionSequenceError(
-                        "parent message", 
-                        "action",
-                        afterword="Something went wrong when updating responses, "
-                        "if app has rebooted, try clearing known item JSON file."
-                        )
-                self.actions[action['action_id']].update(action)
-        for blockid, blockvalue in request['state']['values'].items():
-            for state in self.states:
-                if state in blockvalue:
-                    self.states[state].update(blockvalue[state])
-
 
 class ReddackItem:
     """Stores information about the state of an item in the modqueue."""
     def __init__(self, prawitem):
         self.prawitem = prawitem.id
         self.message_ts = None
-        self.responses = {}
+        self.responses: dict[str, ReddackResponse] = {}
+
+    def process_slack_responses(self, post_dir):
+        """Check for responses to mod item message."""
+        requests, timestamps = find_post_requests(self, post_dir)
+        if requests:
+            for request, timestamp in zip(requests, timestamps):
+                moderator = request['user']['id']
+                if moderator in self.responses:
+                    self.responses[moderator].update(request, timestamp)
+                else:
+                    self.initialize_response(moderator)
+                    self.responses[moderator].update(request, timestamp)
 
 class ReddackComment(ReddackItem):
     """Stores information about the state of a comment in the modqueue."""
@@ -82,9 +65,10 @@ class ReddackSubmission(ReddackItem):
     """Stores information about the state of a submission in the modqueue."""
 
     _ResponseType : Type = SubmissionResponse
+    kind : str = "submission"
 
     def __init__(self, prawitem):
-        self.created_utc = prawitem.created_utc 
+        self.created_utc = prawitem.created_utc
         self.title = prawitem.title
         self.url = prawitem.url
         self.author = prawitem.author.name
@@ -93,20 +77,27 @@ class ReddackSubmission(ReddackItem):
         self.permalink = prawitem.permalink
         super().__init__(prawitem)
 
-    def send_msg(self, client, channel):
+    def send_msg(self, client, channel, removal_options):
         """Send message for new mod item to specified Slack channel"""
-        # TODO Handle missing thumbnail URL gracefully, as many third party 
-        # sources do not appear to permalink thumbnails.
         try:
             result = client.chat_postMessage(
-                blocks=self.msg_payload, channel=channel, 
+                blocks=self.msg_payload(removal_options), channel=channel, 
                 text="New modqueue item", unfurl_links=False, unfurl_media=False
             )
             result.validate()
             self.message_ts = result.data['ts']
             return result
         except SlackApiError as error:
-            raise MsgSendError("Failed to send item to Slack.") from error
+            try:
+                result = client.chat_postMessage(
+                    blocks=self.msg_payload(removal_options, thumbnail=False), channel=channel, 
+                    text="New modqueue item", unfurl_links=False, unfurl_media=False
+                )
+                result.validate()
+                self.message_ts = result.data['ts']
+                return result
+            except SlackApiError as error:
+                raise MsgSendError("Failed to send item to Slack.") from error
 
     def _delete_msg(self, client, user_client, channel):
         """Delete replies to mod item message"""
@@ -170,17 +161,18 @@ class ReddackSubmission(ReddackItem):
         else:
             return None
     
-    @property
-    def msg_payload(self):
+    def msg_payload(self, removal_options, thumbnail=True):
         try:
-            return build_submission_blocks(
+            return build_submission_block(
                 self.created_utc, 
                 self.title, 
                 self.url, 
                 self.author, 
-                self.thumbnail,
+                self.thumbnail if thumbnail else thumbnail,
                 self.text,
-                self.permalink
+                self.permalink,
+                removal_options
+
             )
         except AttributeError as error:
             raise MsgSendError(
@@ -190,11 +182,20 @@ class ReddackSubmission(ReddackItem):
     @property
     def removal_reasons(self):
         unique_reasons = []
-        for response in self.responses:
+        for response in self.responses.values():
             for reason in response.states['actionRemovalReason'].value:
                 if reason not in unique_reasons: unique_reasons.append(reason)
         return sorted(unique_reasons)
 
+    @property
+    def modnote(self):
+        modnote = ""
+        timestamp = "0"
+        for response in self.responses.values():
+            if response.states['actionModnote'].timestamp > timestamp:
+                modnote = response.states['actionModnote'].value
+        return modnote
+                
 
 class Auth(abc.ABC):
     @abc.abstractmethod
@@ -240,17 +241,12 @@ class RemovalTemplate(TypedDict):
     pre: str
     post: str
 
-class Rule:
-    def __init__(self,
-        title: str,
-        text: str,
-        link: str,
-        applyto: str,
-    ):
-        self.title = title
-        self.text = text
-        self.link = link
-        self.applyto = applyto
+class Rule(TypedDict):
+    title: str
+    text: str
+    shorttext: str
+    link: str
+    applyto: str
 
 class Reddack:
     def __init__(self,
@@ -281,7 +277,8 @@ class Reddack:
         self.rules = rules
         self.channels = channels
         self.thresholds = thresholds
-        self._removal_template = removal_template
+        self.removal_template = removal_template
+        self.removal_options = build_removal_block(self.rules)
 
     @property
     def subreddit(self):
@@ -298,18 +295,88 @@ class Reddack:
     @property
     def slack_user_client(self):
         return self.slack_auth.create_client(as_user=True)
-    
-    def removal_message(self, rule):
-        return "Removal message here"
 
-def removal_message(
-    template: RemovalTemplate, 
-    rules: list[Rule], 
-    mod_note: str = None
-):
-    msg = template['pre']
-    for rule in rules:
-        msg += "\n\n> " + rule.text
-    msg += mod_note
-    msg += template['post'] 
+    @property
+    def subreddit(self):
+        return self.praw_client.subreddit(self.subreddit_name)
+    
+    def sync(self):
+        knownitems = get_known_items(self.known_items_path)
+        newitems = self.check_reddit_queue(knownitems)
+        knownitems = self.update_slack_queue(newitems, knownitems)
+        update_knownitems_file(knownitems, self.known_items_path)
+        knownitems = self.check_slack_queue(knownitems)
+        update_knownitems_file(knownitems, self.known_items_path)
+
+    def check_reddit_queue(self, knownitems):
+        """Check subreddit modqueue for unmoderated items."""
+        newitems = {}
+        for item in self.subreddit.mod.modqueue(limit=None):
+            # Check if item is comment or submission
+            if isinstance(item, Submission):
+                ReddackItem = ReddackSubmission
+            else:
+                print("Ignoring non-submission item.")
+                continue
+            # Check if item is known
+            isknown = True if item.id in knownitems else False
+            if isknown:
+                continue
+            else:
+                newitems[item.id] = ReddackItem(item)
+        return newitems
+
+    def update_slack_queue(self, newitems, knownitems):
+        for id, moditem in newitems.items():
+            moditem.send_msg(
+                self.slack_client, 
+                self.channels[type(moditem)]['queue'],
+                self.removal_options
+            )
+            # Add to known items
+            knownitems[id] = moditem
+        return knownitems
+        
+    def send_removal_message(self, moditem):
+        body = self.removal_template["pre"]
+        for removal_reason in moditem.removal_reasons:
+            rule = self.rules[removal_reason]
+            body +=f"\n\n>{rule['title']}: {rule['text']}"
+        if moditem.modnote:
+            body += f"\n\n**Moderator note:** {moditem.modnote}"
+        body += "\n\n" + self.removal_template["post"]
+        body += f"\n\n**Content of your {moditem.kind}**: {moditem.title}\n\n>"
+        body += moditem.url if not moditem.text else moditem.text
+        body += f"\n\n---\n\n[Link to your submission]({moditem.permalink})"
+        subject = f"Your {moditem.kind} has been removed from r/{self.subreddit_name}"
+        conversation = self.subreddit.modmail.create(subject, body, moditem.author)
+        conversation.archive()
+        
+    def check_slack_queue(self, knownitems: dict[str, ReddackItem]):
+        """Check Slack items for moderation actions"""
+        incomplete = {}
+        complete = {}
+        if knownitems is None:
+            knownitems = {}
+        for moditem in knownitems.values():
+            moditem.process_slack_responses(self.post_requests_path)
+            if moditem.approve_or_remove(self.thresholds[type(moditem)]) == "approve":
+                self.praw_client.submission(moditem.prawitem).mod.approve()
+            elif moditem.approve_or_remove(self.thresholds[type(moditem)]) == "remove":
+                self.praw_client.submission(moditem.prawitem).mod.remove()
+                self.send_removal_message(moditem)
+            else:
+                incomplete[moditem.prawitem] = moditem
+                continue
+            complete[moditem.prawitem] = moditem
+            moditem.complete_cleanup(
+                self.slack_client, 
+                self.slack_user_client, 
+                self.channels[type(moditem)]
+            )
+        cleanup_knownitems_json(incomplete, self.known_items_path)
+        cleanup_postrequest_json(incomplete, self.post_requests_path)
+        knownitems = incomplete
+        return knownitems
+
     

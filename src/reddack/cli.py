@@ -13,7 +13,7 @@ from pathlib import Path
 # Local imports
 import reddack
 import reddack.config
-import reddack.queueing
+import reddack.utils
 
 def create_arg_parser() -> argparse.ArgumentParser:
     """Create the argument parser for the CLI"""
@@ -45,7 +45,7 @@ def process_args(parsedargs):
         reddack_objs = reddack.config.reddack_from_file(configpath)
     if parsedargs.queue:
         for objs in reddack_objs:
-            reddack.queueing.sync(objs)
+            reddack.utils.sync(objs)
 
 def cli(sys_argv: Sequence[str] | None = None) -> None:
     """Parse the CLI arguments"""
