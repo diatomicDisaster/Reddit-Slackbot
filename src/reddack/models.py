@@ -114,7 +114,7 @@ class ReddackSubmission(ReddackItem):
         except SlackApiError as error:
             try:
                 result = client.chat_postMessage(
-                    blocks=self.NoneType(removal_options, thumbnail=False), channel=channel, 
+                    blocks=self.msg_payload(removal_options, thumbnail=False), channel=channel, 
                     text="New modqueue item", unfurl_links=False, unfurl_media=False
                 )
                 result.validate()
