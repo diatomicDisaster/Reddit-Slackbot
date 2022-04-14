@@ -16,10 +16,12 @@ class AbstractAction(abc.ABC):
         pass
 
 class Action(AbstractAction):
+    """Empty action class for e.g buttons"""
     def update(self, action):
         pass
 
 class State(AbstractAction):
+    """Stateful action"""
     def update(self, action):
         pass
 
@@ -79,7 +81,7 @@ class SubmissionResponse(ReddackResponse):
             'actionModnote' : Modnote()
             }
 
-    def update(self, request, timestamp):
+    def update(self, request: dict, timestamp: str):
         """Update response with actions from Slack payload."""
         for action in request['actions']:
             if action['action_id'] in self.actions:

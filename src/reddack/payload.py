@@ -13,7 +13,7 @@ months = {
 ordinal = lambda n : "%d%s" % (n,"tsnrhtdd"[(n//10%10!=1)*(n%10<4)*n%10::4])
 
 
-def build_response_block(name, vote, removalreasons):
+def build_response_block(name: str, vote, removalreasons: list) -> dict[str, str]:
     """Build blocks for moderator responses in archive message"""
     textstring = f"{name}: {vote}"
     if removalreasons:
@@ -28,12 +28,12 @@ def build_response_block(name, vote, removalreasons):
     return responseblock
 
 def build_archive_blocks(
-    created_unix, 
-    title,
-    authorname,
-    permalink,
-    responseblocks
-):
+    created_unix: str, 
+    title: str,
+    authorname: str,
+    permalink: str,
+    responseblocks: dict
+) -> dict:
     """Build Slack API blocks for archive message."""
     timestamp = datetime.fromtimestamp(created_unix, tz=timezone.utc)
     timestring = f"Created {months[timestamp.month]} {ordinal(timestamp.day)} at {timestamp:%H:%M}"
@@ -85,7 +85,7 @@ def build_archive_blocks(
     ]
     return archiveblocks
 
-def rule_select_json(value, title):
+def rule_select_json(value: str, title:str ) -> dict:
     block_json = {
         "text": {
             "type": "plain_text",
@@ -96,7 +96,7 @@ def rule_select_json(value, title):
     }
     return block_json
 
-def build_removal_block(rules):
+def build_removal_block(rules: list) -> list:
     "Build list of Slack API multi_static_select options for removal reasons"
     removal_options = []
     for name, rule in rules.items():
@@ -112,15 +112,15 @@ def build_removal_block(rules):
     return removal_options
 
 def build_submission_block(
-    created_unix, 
-    title, 
-    url, 
-    authorname, 
-    thumbnail_url,
-    selftext,
-    permalink,
-    removal_options
-):
+    created_unix: str, 
+    title: str, 
+    url: str, 
+    authorname: str, 
+    thumbnail_url: str,
+    selftext: str,
+    permalink: str,
+    removal_options: dict
+) -> dict:
     """Build Slack API blocks for new submission message."""
     # TODO Add block element for flairing posts functionality.
 
