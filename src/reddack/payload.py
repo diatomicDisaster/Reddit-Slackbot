@@ -13,7 +13,7 @@ months = {
 ordinal = lambda n : "%d%s" % (n,"tsnrhtdd"[(n//10%10!=1)*(n%10<4)*n%10::4])
 
 
-def build_response_block(name: str, vote, removalreasons: list) -> dict[str, str]:
+def build_response_block(name: str, vote, removalreasons: list) -> dict:
     """Build blocks for moderator responses in archive message"""
     textstring = f"{name}: {vote}"
     if removalreasons:

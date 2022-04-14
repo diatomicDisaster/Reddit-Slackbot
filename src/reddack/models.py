@@ -1,6 +1,5 @@
 from __future__ import annotations
 import abc
-from types import NoneType
 from typing import (
     Type,
     Union,
