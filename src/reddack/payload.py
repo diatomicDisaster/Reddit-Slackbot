@@ -13,7 +13,7 @@ months = {
 ordinal = lambda n : "%d%s" % (n,"tsnrhtdd"[(n//10%10!=1)*(n%10<4)*n%10::4])
 
 
-def build_response_block(name: str, vote: int, removalreasons: list) -> dict:
+def build_response_block(name: str, vote, removalreasons: list) -> dict:
     """Build blocks for moderator responses in archive message"""
     textstring = f"{name}: {vote}"
     if removalreasons:
@@ -188,7 +188,7 @@ def build_submission_block(
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "Approve",
+                                "text": "Strong Approve",
                                 "emoji": True
                             },
                             "value": "+1"
@@ -196,10 +196,34 @@ def build_submission_block(
                         {
                             "text": {
                                 "type": "plain_text",
+                                "text": "Approve",
+                                "emoji": True
+                            },
+                            "value": "+0.5"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
                                 "text": "Remove",
                                 "emoji": True
                             },
+                            "value": "-0.5"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Strong Remove",
+                                "emoji": True
+                            },
                             "value": "-1"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Force Remove",
+                                "emoji": True
+                            },
+                            "value": "-999"
                         }
                     ],
                     "action_id": "actionApproveRemove"

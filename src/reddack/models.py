@@ -146,7 +146,7 @@ class ReddackSubmission(ReddackItem):
             responseblocks.append(
                 build_response_block(
                     name, 
-                    modresponse.states["actionApproveRemove"].value, 
+                    modresponse.states["actionApproveRemove"].text, 
                     modresponse.states["actionRemovalReason"].value
                 )
             )
@@ -427,6 +427,7 @@ class Reddack:
         
     def send_removal_message(self, moditem: ReddackItem):
         """Send a modmail with the selected removal reasons and optional modnote"""
+        # TODO Dispatch body creation
         body = self.removal_template["pre"]
         for removal_reason in moditem.removal_reasons:
             rule = self.rules[removal_reason]

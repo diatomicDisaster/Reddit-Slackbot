@@ -32,6 +32,7 @@ class ApproveRemove(State):
 
     def update(self, state):
         self.value = state['selected_option']['value']
+        self.text = state['selected_option']['text']['text']
 
 class RemovalReason(State):
     """Mod action defining removal reasons."""
@@ -58,7 +59,6 @@ class Confirm(Action):
     def update(self, action):
         """Confirm previous inputs"""
         self.value = True
-
 
 class ReddackResponse(abc.ABC):
     """Class for storing moderator responses to Slack mod item messages"""
