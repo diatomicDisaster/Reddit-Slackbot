@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: reddack
-Version: 0.1.1
+Version: 0.1.2
 Summary: A suite of tools for moderating Reddit communities via Slack using interactive messages and the Slack Blocks UI.
 Home-page: https://github.com/diatomicDisaster/reddack
 Author: Wilfrid Somogyi

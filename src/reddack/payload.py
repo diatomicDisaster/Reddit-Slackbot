@@ -13,7 +13,7 @@ months = {
 ordinal = lambda n : "%d%s" % (n,"tsnrhtdd"[(n//10%10!=1)*(n%10<4)*n%10::4])
 
 
-def build_response_block(name: str, vote, removalreasons: list) -> dict:
+def build_response_block(name: str, vote: int, removalreasons: list) -> dict:
     """Build blocks for moderator responses in archive message"""
     textstring = f"{name}: {vote}"
     if removalreasons:
@@ -32,13 +32,18 @@ def build_archive_blocks(
     title: str,
     authorname: str,
     permalink: str,
-    responseblocks: dict
+    responseblocks: dict = None
 ) -> dict:
     """Build Slack API blocks for archive message."""
     timestamp = datetime.fromtimestamp(created_unix, tz=timezone.utc)
     timestring = f"Created {months[timestamp.month]} {ordinal(timestamp.day)} at {timestamp:%H:%M}"
     titlestring = f"<https://reddit.com{permalink}|{title}>"
     authorstring = f"Author: u/{authorname}"
+    if not responseblocks:
+        responseblocks = [{
+            "type": "mrkdwn",
+            "text": "No moderator responses"
+        }]
     archiveblocks = [
         {
             "type": "section",
@@ -172,22 +177,6 @@ def build_submission_block(
         },
         # Moderator actions
         {
-            "type": "actions",
-            "elements": [
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "See Post",
-                        "emoji": True
-                    },
-                    "value": "seepost",
-                    "url": permalinkstring,
-                    "action_id": "actionSeePost"
-                }
-            ]
-        },
-        {
             "type": "divider"
         },
         {
@@ -236,6 +225,22 @@ def build_submission_block(
                 "emoji": True
             }
         },
+        # Confirm inputs
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Confirm",
+                        "emoji": True
+                    },
+                    "value": "confirmed",
+                    "action_id": "actionConfirm"
+                }
+            ]
+        },
         # Custom moderator note
 		{
 			"type": "input",
@@ -250,7 +255,7 @@ def build_submission_block(
 				"emoji": True
 			}
 		},
-        # Confirm inputs
+        # See post button
         {
             "type": "actions",
             "elements": [
@@ -258,11 +263,12 @@ def build_submission_block(
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "Confirm",
+                        "text": "View on Reddit",
                         "emoji": True
                     },
-                    "value": "confirmed",
-                    "action_id": "actionConfirm"
+                    "value": "seepost",
+                    "url": permalinkstring,
+                    "action_id": "actionSeePost"
                 }
             ]
         }

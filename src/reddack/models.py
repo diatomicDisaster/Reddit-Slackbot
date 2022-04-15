@@ -153,7 +153,7 @@ class ReddackSubmission(ReddackItem):
             self.title,
             self.author,
             self.permalink,
-            responseblocks,
+            responseblocks = responseblocks,
         )
         with open("debugdump.json", "w+") as f:
             blocksjson = jsonpickle.encode(archiveblocks)
@@ -163,7 +163,7 @@ class ReddackSubmission(ReddackItem):
             text="Archived modqueue item", unfurl_links=False, unfurl_media=False
         )
 
-    def complete_cleanup(self, client: WebClient, user_client: WebClient, channels: str):
+    def complete_cleanup(self, client: WebClient, user_client: WebClient, channels: Channels):
         """Delete message and send to archive after completion"""
         self._send_archive(client, channels['archive'])
         self._delete_msg(client, user_client, channels['queue'])
@@ -257,7 +257,7 @@ class SlackAuth(Auth):
         self.bot_token = bot_token
         self.user_token = user_token
 
-    def create_client(self, as_user: bool =False) -> WebClient:
+    def create_client(self, as_user: bool = False) -> WebClient:
         """Create an instance of the slack_sdk.WebClient using stored authenticators"""
         return WebClient(token=(self.user_token if as_user else self.bot_token))
 
@@ -337,6 +337,7 @@ class Reddack:
         knownitems = get_known_items(self.knownitems_path)
         newitems = self.check_reddit_queue(knownitems)
         knownitems = self.update_slack_queue(newitems, knownitems)
+        knownitems = self.remove_orphan_messages(knownitems)
         update_knownitems_file(knownitems, self.knownitems_path)
         knownitems = self.check_slack_queue(knownitems)
         update_knownitems_file(knownitems, self.knownitems_path)
@@ -346,20 +347,42 @@ class Reddack:
     ) -> dict[str, ReddackItem]:
         """Check Reddit modqueue for unmoderated items"""
         newitems = {}
-        for item in self.subreddit.mod.modqueue(limit=None):
-            # Check if item is comment or submission
-            if isinstance(item, Submission):
-                ReddackItem = ReddackSubmission
-            else:
-                print("Ignoring non-submission item.")
-                continue
-            # Check if item is known
-            isknown = True if item.id in knownitems else False
+        queueitems = self.retrieve_reddit_queue()
+        for id, moditem in queueitems.items():
+            isknown = True if id in knownitems else False
             if isknown:
                 continue
             else:
-                newitems[item.id] = ReddackItem(item)
+                newitems[id] = moditem
         return newitems
+
+    def retrieve_reddit_queue(self) -> dict[str, ReddackItem]:
+        """Retrieve items from the Reddit queue"""
+        queue = {}
+        for item in self.subreddit.mod.modqueue(limit=None):
+            # Check if item is comment or submission
+            if isinstance(item, Submission):
+                reddackitem = ReddackSubmission(item)
+            else:
+                print("Ignoring non-submission item.")
+                continue
+            queue[item.id] = reddackitem
+        return queue
+
+    def remove_orphan_messages(self, knownitems: dict[str, ReddackItem]):
+        """Remove Slack queue messages for items no longer in Reddit modqueue"""
+        unorphaned = {}
+        queueitems = self.retrieve_reddit_queue()
+        for id, moditem in knownitems.items():
+            if id not in queueitems:
+                moditem.complete_cleanup(
+                    self.slack_client, 
+                    self.slack_user_client, 
+                    self.channels[type(moditem)]
+                )
+            else:
+                unorphaned[id] = moditem
+        return unorphaned
 
     def update_slack_queue(self, 
         newitems: dict[str, ReddackItem], 
