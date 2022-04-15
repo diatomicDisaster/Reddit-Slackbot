@@ -167,8 +167,8 @@ class ReddackSubmission(ReddackItem):
 
     def complete_cleanup(self, client: WebClient, user_client: WebClient, channels: Channels):
         """Delete message and send to archive after completion"""
-        self._send_archive(client, channels['archive'])
         self._delete_msg(client, user_client, channels['queue'])
+        self._send_archive(client, channels['archive'])
 
     def initialize_response(self, moderator: str):
         """Initialize a new moderator response object"""
@@ -354,11 +354,16 @@ class Reddack:
     
     def sync(self):
         """Sync the modqueue between Slack and Reddit"""
+        # Load known items from JSON
         knownitems = get_known_items(self.knownitems_path)
+        # Check Reddit modqueue for new items
         newitems = self.check_reddit_queue(knownitems)
+        # Update Slack modqueue with new items and remove orphaned items
+        # TODO Add handling for case where Slack message has sent but something prevents item being added to knownitems, e.g title compare
         knownitems = self.update_slack_queue(newitems, knownitems)
         knownitems = self.remove_orphan_messages(knownitems)
         update_knownitems_file(knownitems, self.knownitems_path)
+        # Check Slack modqueue for moderator actions
         knownitems = self.check_slack_queue(knownitems)
         update_knownitems_file(knownitems, self.knownitems_path)
 
