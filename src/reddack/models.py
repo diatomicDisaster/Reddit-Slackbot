@@ -39,6 +39,8 @@ from reddack.utils import (
 # TODO Add functionality for flairing posts
 # TODO Add functionality for awarding posts
 
+DEFAULT_AGENT =  "Slack moderation interface by u/ModeHopper"
+
 class ReddackItem:
     """Stores information about the state of an item in the modqueue."""
     def __init__(self, prawitem):
@@ -229,28 +231,46 @@ class Auth(abc.ABC):
 
 class PrawAuth(Auth):
 
-    AGENT = "r/SpaceX Slack moderation interface by u/ModeHopper"
-
     def __init__(self, 
         client_id: str, 
         client_secret: str, 
-        username: str, 
-        password: str
+        user_agent: str = DEFAULT_AGENT,
+        username: str = None, 
+        password: str = None,
+        refresh_token: str = None
     ):
         self.client_id = client_id
         self.client_secret = client_secret
+        self.user_agent = user_agent
         self.username = username
         self.password = password
+        self.refresh_token = refresh_token
+    
+    def _refresh_auth(self):
+        """Create client using refresh token authentication"""
+        return Reddit(
+            client_id = self.client_id,
+            client_secret = self.client_secret,
+            refresh_token = self.refresh_token,
+            user_agent = self.user_agent
+        )
 
-    def create_client(self) -> Reddit:
-        """Create an instance of praw.Reddit using stored authenticators"""
+    def _user_auth(self):
+        """Create client using username and password authentication"""
         return Reddit(
             client_id = self.client_id,
             client_secret = self.client_secret,
             password = self.password,
             username = self.username,
-            user_agent = self.AGENT
+            user_agent = self.user_agent
         )
+
+    def create_client(self) -> Reddit:
+        """Create an instance of praw.Reddit using stored authenticators"""
+        if self.refresh_token is not None:
+            return self._refresh_auth()
+        else:
+            return self._user_auth()
 
 class SlackAuth(Auth):
     def __init__(self, bot_token: str, user_token: str):
@@ -413,7 +433,7 @@ class Reddack:
         body += moditem.url if not moditem.text else moditem.text
         body += f"\n\n---\n\n[Link to your submission]({moditem.permalink})"
         subject = f"Your {moditem.kind} has been removed from r/{self.subreddit_name}"
-        conversation = self.subreddit.modmail.create(subject, body, moditem.author)
+        conversation = self.subreddit.modmail.create(subject, body, moditem.author, author_hidden=True)
         conversation.archive()
         
     def check_slack_queue(self, 
