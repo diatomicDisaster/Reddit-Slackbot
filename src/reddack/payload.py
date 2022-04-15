@@ -220,6 +220,14 @@ def build_submission_block(
                         {
                             "text": {
                                 "type": "plain_text",
+                                "text": "Force Approve",
+                                "emoji": True
+                            },
+                            "value": "999"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
                                 "text": "Force Remove",
                                 "emoji": True
                             },

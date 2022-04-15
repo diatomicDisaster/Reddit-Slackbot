@@ -352,6 +352,7 @@ class Reddack:
     def subreddit(self):
         return self.praw_client.subreddit(self.subreddit_name)
     
+    #TODO Add partial sync to be triggered by POST request
     def sync(self):
         """Sync the modqueue between Slack and Reddit"""
         # Load known items from JSON
